@@ -9,7 +9,7 @@ import Animated, {
   useSharedValue,
   withSpring,
 } from "react-native-reanimated";
-import { Ionicons, Feather } from "@expo/vector-icons";
+import { Ionicons, Feather, MaterialCommunityIcons } from "@expo/vector-icons";
 
 export function CustomTabBar({
   state,
@@ -113,12 +113,12 @@ export function CustomTabBar({
         if (route.name === "index") {
           iconName = "grid";
           IconComponent = Feather;
-        } else if (route.name === "dashboard") {
+        } else if (route.name === "workouts") {
           iconName = isFocused ? "barbell" : "barbell-outline";
           IconComponent = Ionicons;
-        } else if (route.name === "exercise-picker") {
-          iconName = "search";
-          IconComponent = Feather;
+        } else if (route.name === "exercises") {
+          iconName = isFocused ? "arm-flex" : "arm-flex-outline";
+          IconComponent = MaterialCommunityIcons;
         } else {
           iconName = "help-circle";
           IconComponent = Feather;
@@ -128,9 +128,9 @@ export function CustomTabBar({
         const displayLabel =
           route.name === "index"
             ? "Dashboard"
-            : route.name === "dashboard"
+            : route.name === "workouts"
               ? "Workouts"
-              : route.name === "exercise-picker"
+              : route.name === "exercises"
                 ? "Exercises"
                 : String(label);
 
@@ -193,7 +193,7 @@ function TabButton({
         <IconComponent
           name={iconName}
           size={20}
-          color={isFocused ? "#fba613" : "#9ca3af"} // secondary color when active, gray-400 when inactive
+          color={isFocused ? "#f3ff47" : "#9ca3af"} // secondary color when active, gray-400 when inactive
         />
         {isFocused && (
           <Animated.Text

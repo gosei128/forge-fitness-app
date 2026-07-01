@@ -13,17 +13,17 @@ const TabLayout = () => {
       <Tabs.Screen
         name="index"
         options={{
-          title: "Dashboard",
+          title: "Workouts",
         }}
       />
       <Tabs.Screen
-        name="dashboard"
+        name="workouts"
         options={{
           title: "Workouts",
         }}
       />
       <Tabs.Screen
-        name="exercise-picker"
+        name="exercises"
         options={{
           title: "Exercises",
         }}

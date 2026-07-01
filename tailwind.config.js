@@ -11,7 +11,16 @@ module.exports = {
         extend: {
             colors: {
                 primary: "#131316",
-                secondary: "#fba613",
+                secondary: "#f3ff47",
+                tertiary: "#2b2b2b",
+            },
+            fontFamily: {
+                sans: ["SpaceGrotesk-Regular"],
+                spaceLight: ["SpaceGrotesk-Light"],
+                spaceRegular: ["SpaceGrotesk-Regular"],
+                spaceMedium: ["SpaceGrotesk-Medium"],
+                spaceSemiBold: ["SpaceGrotesk-SemiBold"],
+                spaceBold: ["SpaceGrotesk-Bold"],
             },
         },
     },

@@ -15,6 +15,13 @@
       "when": 1782839773724,
       "tag": "0001_amused_lord_tyger",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1782909128585,
+      "tag": "0002_whole_tana_nile",
+      "breakpoints": true
     }
   ]
 }

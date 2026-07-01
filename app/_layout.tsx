@@ -5,11 +5,36 @@ import { db } from "../db";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { Stack } from "expo-router";
 import "../global.css";
-import { seedExercises } from "../db/seed";
-import { exercises } from "../db/schema";
+import {exercises} from "../db/schema";
+import { useFonts } from "expo-font";
+import * as SplashScreen from "expo-splash-screen";
+import {seedExercises} from "../db/seed";
+
+// Prevent the splash screen from auto-hiding before asset loading is complete.
+SplashScreen.preventAutoHideAsync();
 
 const RootLayout = () => {
-  const { success, error } = useMigrations(db, migration);
+  const { success: migrationsSuccess, error: migrationsError } = useMigrations(db, migration);
+
+
+
+  const [fontsLoaded, fontsError] = useFonts({
+    "SpaceGrotesk-Light": require("../assets/fonts/static/SpaceGrotesk-Light.ttf"),
+    "SpaceGrotesk-Regular": require("../assets/fonts/static/SpaceGrotesk-Regular.ttf"),
+    "SpaceGrotesk-Medium": require("../assets/fonts/static/SpaceGrotesk-Medium.ttf"),
+    "SpaceGrotesk-SemiBold": require("../assets/fonts/static/SpaceGrotesk-SemiBold.ttf"),
+    "SpaceGrotesk-Bold": require("../assets/fonts/static/SpaceGrotesk-Bold.ttf"),
+  });
+
+  useEffect(() => {
+    if ((fontsLoaded || fontsError) && (migrationsSuccess || migrationsError)) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded, fontsError, migrationsSuccess, migrationsError]);
+
+  if ((!fontsLoaded && !fontsError) || (!migrationsSuccess && !migrationsError)) {
+    return null;
+  }
 
   return (
     <>
@@ -20,10 +45,4 @@ const RootLayout = () => {
   );
 };
 export default RootLayout;
-const styles = StyleSheet.create({
-  loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-});
+

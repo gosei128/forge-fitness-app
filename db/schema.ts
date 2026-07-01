@@ -6,6 +6,7 @@ export const exercises = sqliteTable("exercises", {
     muscleGroup: text("muscle_group").notNull(),
     equipment: text("equipment"),
     category : text("category"),
+    instructions : text("instructions"),
     createdAt: int("create_at", {mode :"timestamp"}).$defaultFn(() => new Date())
 })
 
