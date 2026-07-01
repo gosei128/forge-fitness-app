@@ -286,12 +286,13 @@ const Workouts = () => {
                   </View>
 
                   <Pressable
+                    style={{ elevation: 5 }}
                     onPress={() =>
                       handleStartTemplate(template.name, template.exercises)
                     }
-                    className="bg-secondary/10 border border-secondary/20 active:bg-secondary py-3.5 rounded-2xl items-center"
+                    className="bg-secondary border border-secondary/20 active:bg-secondary py-3.5 rounded-2xl items-center justify-center"
                   >
-                    <Text className="text-secondary  font-spaceBold text-sm">
+                    <Text className="text-tertiary font-spaceBold text-md">
                       Start Session
                     </Text>
                   </Pressable>
@@ -374,6 +375,7 @@ const Workouts = () => {
 
               {/* Start Session Button */}
               <Pressable
+                style={{ elevation: 5 }}
                 onPress={handleStartCustomSession}
                 className="bg-secondary py-4 rounded-2xl items-center justify-center flex-row active:opacity-90 shadow-lg"
               >
@@ -384,6 +386,7 @@ const Workouts = () => {
             </Animated.View>
           )}
         </ScrollView>
+        <Spacer height={50} />
       </View>
 
       {/* Exercise Picker for Custom Builder */}

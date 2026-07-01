@@ -50,17 +50,14 @@ const RootLayout = () => {
 
   return (
     <>
-      <Stack>
+      <Stack
+        screenOptions={{
+          contentStyle: { backgroundColor: "#131316" },
+        }}
+      >
         <Stack.Screen name={"(tabs)"} options={{ headerShown: false }} />
         <Stack.Screen name={"(workouts)"} options={{ headerShown: false }} />
-        <Stack.Screen
-          name={"(workouts)/active-session"}
-          options={{ headerShown: false }}
-        />
-        <Stack.Screen
-          name={"(workouts)/add-exercise"}
-          options={{ headerShown: false }}
-        />
+        <Stack.Screen name={"(exercises)"} options={{ headerShown: false }} />
       </Stack>
     </>
   );
