@@ -1,5 +1,9 @@
 {
   "expo": {
+    "scheme": "forge",
+    "experiments": {
+      "typedRoutes" : true
+    },
     "name": "forge",
     "slug": "forge",
     "version": "1.0.0",
@@ -20,6 +24,11 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      "expo-sqlite",
+      "expo-router",
+      "expo-status-bar"
+    ]
   }
 }
