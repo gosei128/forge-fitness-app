@@ -141,21 +141,21 @@ const FilterSheet = React.memo(
                   key={group}
                   onPress={() => handleSelect(group)}
                   style={{
-                    borderColor: isActive ? `${color}60` : "#262626",
-                    backgroundColor: isActive ? `${color}12` : "#111111",
+                    borderColor: isActive ? `#f3ff47` : "#262626",
+                    backgroundColor: isActive ? `#f3ff4720` : "#111111",
                   }}
                   className="flex-row items-center justify-between p-4 mb-2 rounded-2xl border"
                 >
                   <View className="flex-row items-center gap-3">
                     <View className="w-3 h-3 rounded-full bg-secondary/70" />
                     <Text
-                      style={{ color: isActive ? color : "#fff" }}
+                      style={{ color: isActive ? "#f3ff47" : "#fff" }}
                       className="font-spaceMedium text-base"
                     >
                       {group}
                     </Text>
                   </View>
-                  {isActive && <Check color={color} size={18} />}
+                  {isActive && <Check color={"#f3ff47"} size={18} />}
                 </Pressable>
               );
             })}
@@ -232,7 +232,8 @@ const Exercises = () => {
   const filtered = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
     return allExercises.filter((e) => {
-      const matchesMuscle = activeFilter === null || e.muscleGroup === activeFilter;
+      const matchesMuscle =
+        activeFilter === null || e.muscleGroup === activeFilter;
       const matchesSearch = q === "" || e.name.toLowerCase().includes(q);
       return matchesMuscle && matchesSearch;
     });
@@ -247,8 +248,6 @@ const Exercises = () => {
     },
     [router],
   );
-
-  const filterColor = activeFilter ? getMuscleColor(activeFilter) : "#7C3AED";
 
   return (
     <View className="flex-1 bg-primary">
@@ -321,14 +320,20 @@ const Exercises = () => {
             No exercises found
             {searchQuery ? (
               <>
-                {" "}for{" "}
-                <Text className="text-white font-spaceBold">"{searchQuery}"</Text>
+                {" "}
+                for{" "}
+                <Text className="text-white font-spaceBold">
+                  "{searchQuery}"
+                </Text>
               </>
             ) : null}
             {activeFilter ? (
               <>
-                {" "}in{" "}
-                <Text className="text-white font-spaceBold">{activeFilter}</Text>
+                {" "}
+                in{" "}
+                <Text className="text-white font-spaceBold">
+                  {activeFilter}
+                </Text>
               </>
             ) : null}
           </Text>

@@ -24,6 +24,7 @@ import { exercises } from "../../db/schema";
 import { inArray } from "drizzle-orm";
 import ExerciseBottomSheet from "../../components/ExerciseBottomSheet";
 import AnimatedButton from "../../components/AnimatedButton";
+import { useWorkoutSession } from "../../context/WorkoutSessionContext";
 
 interface Exercise {
   id: number;
@@ -70,6 +71,7 @@ const capitalize = (str: string) => {
 const Workouts = () => {
   const insets = useSafeAreaInsets();
   const scale = useSharedValue(1);
+  const { isActive, startSession } = useWorkoutSession();
 
   // Tab State
   const [activeTab, setActiveTab] = useState<"templates" | "custom">(
@@ -111,7 +113,7 @@ const Workouts = () => {
   }));
 
   const handleOnPress = () => {
-    // Starts an empty session
+    // Starts or resumes an active session
     router.push("/(workouts)/active-session");
   };
 
@@ -119,6 +121,18 @@ const Workouts = () => {
     templateName: string,
     exerciseNames: string[],
   ) => {
+    if (isActive) {
+      Alert.alert(
+        "Session in Progress",
+        "You already have an active workout session running. Please finish or cancel it before starting a new template.",
+        [
+          { text: "View Active Session", onPress: () => router.push("/(workouts)/active-session") },
+          { text: "Cancel", style: "cancel" }
+        ]
+      );
+      return;
+    }
+
     try {
       const results = await db
         .select({ id: exercises.id })
@@ -160,6 +174,18 @@ const Workouts = () => {
   const handleStartCustomSession = () => {
     if (customExercises.length === 0) {
       Alert.alert("No Exercises", "Please add at least one exercise to start.");
+      return;
+    }
+
+    if (isActive) {
+      Alert.alert(
+        "Session in Progress",
+        "You already have an active workout session running. Please finish or cancel it before starting a new custom session.",
+        [
+          { text: "View Active Session", onPress: () => router.push("/(workouts)/active-session") },
+          { text: "Cancel", style: "cancel" }
+        ]
+      );
       return;
     }
 

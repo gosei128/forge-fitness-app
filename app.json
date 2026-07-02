@@ -2,7 +2,7 @@
   "expo": {
     "scheme": "forge",
     "experiments": {
-      "typedRoutes" : true
+      "typedRoutes": true
     },
     "name": "forge",
     "slug": "forge",
@@ -20,7 +20,8 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.roni.dev.forge"
     },
     "web": {
       "favicon": "./assets/favicon.png"

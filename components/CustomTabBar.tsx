@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, Pressable, LayoutChangeEvent } from "react-native";
+import { View, Text, Pressable, LayoutChangeEvent, Keyboard } from "react-native";
 import { BottomTabBarProps } from "expo-router/build/react-navigation/bottom-tabs";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import Animated, {
@@ -18,6 +18,21 @@ export function CustomTabBar({
 }: BottomTabBarProps) {
   const insets = useSafeAreaInsets();
   const [containerWidth, setContainerWidth] = useState(0);
+  const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+
+  useEffect(() => {
+    const showSubscription = Keyboard.addListener("keyboardDidShow", () => {
+      setIsKeyboardVisible(true);
+    });
+    const hideSubscription = Keyboard.addListener("keyboardDidHide", () => {
+      setIsKeyboardVisible(false);
+    });
+
+    return () => {
+      showSubscription.remove();
+      hideSubscription.remove();
+    };
+  }, []);
 
   const tabWidth = containerWidth / state.routes.length;
   const translateX = useSharedValue(0);
@@ -31,16 +46,20 @@ export function CustomTabBar({
     }
   }, [state.index, tabWidth]);
 
-  const onLayout = (e: LayoutChangeEvent) => {
-    setContainerWidth(e.nativeEvent.layout.width);
-  };
-
   const animatedIndicatorStyle = useAnimatedStyle(() => {
     return {
       transform: [{ translateX: translateX.value }],
       width: tabWidth,
     };
   });
+
+  const onLayout = (e: LayoutChangeEvent) => {
+    setContainerWidth(e.nativeEvent.layout.width);
+  };
+
+  if (isKeyboardVisible) {
+    return null;
+  }
 
   return (
     <View

@@ -10,33 +10,20 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { Stack, router, useLocalSearchParams } from "expo-router";
-import { Trash2, Check, Dumbbell, Play, X } from "lucide-react-native";
-import { db } from "../../db";
-import { user, workoutSessions, sets, exercises } from "../../db/schema";
-import { eq, desc, inArray } from "drizzle-orm";
+import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
+import {
+  Trash2,
+  Check,
+  Dumbbell,
+  Play,
+  X,
+  ChevronDown,
+  Coffee,
+  Clock,
+} from "lucide-react-native";
 import AnimatedButton from "../../components/AnimatedButton";
 import ExerciseBottomSheet from "../../components/ExerciseBottomSheet";
-
-interface Exercise {
-  id: number;
-  name: string;
-  muscleGroup: string;
-  equipment: string | null;
-  category: string | null;
-  instructions: string | null;
-}
-
-interface LoggedSet {
-  id: number;
-  weight: string;
-  reps: string;
-  isCompleted: boolean;
-}
-
-interface SelectedExercise extends Exercise {
-  sets: LoggedSet[];
-}
+import { useWorkoutSession } from "../../context/WorkoutSessionContext";
 
 const capitalize = (str: string) => {
   if (!str) return "";
@@ -49,288 +36,62 @@ const capitalize = (str: string) => {
 export default function ActiveSession() {
   const params = useLocalSearchParams();
   const { title, exerciseIds } = params;
+  const navigation = useNavigation();
 
-  const [sessionName, setSessionName] = useState("");
-  const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [elapsedTime, setElapsedTime] = useState(0);
-  const [startTime] = useState(new Date());
 
-  // Setup default session name based on time of day or params
+  const {
+    isActive,
+    sessionName,
+    setSessionName,
+    elapsedTime,
+    selectedExercises,
+    startSession,
+    collapseSession,
+    finishSession,
+    cancelSession,
+    addExercise,
+    removeExercise,
+    addSet,
+    updateSet,
+    removeSet,
+    restTimeLeft,
+    customRestDuration,
+    isRestActive,
+    setCustomRestDuration,
+    stopRestTimer,
+  } = useWorkoutSession();
+
+  // Initialize session in global context on mount if it's not already active
   useEffect(() => {
-    if (title && typeof title === "string") {
-      setSessionName(title);
-    } else {
-      const hours = new Date().getHours();
-      let timeOfDay = "Workout";
-      if (hours < 12) timeOfDay = "Morning Workout";
-      else if (hours < 17) timeOfDay = "Afternoon Workout";
-      else timeOfDay = "Evening Workout";
-
-      setSessionName(timeOfDay);
+    if (!isActive) {
+      const titleStr = typeof title === "string" ? title : "";
+      const idsStr = typeof exerciseIds === "string" ? exerciseIds : "";
+      startSession(titleStr, idsStr);
     }
-  }, [title]);
+  }, [isActive, title, exerciseIds]);
 
-  // Preload exercises if passed in search parameters
+  // Block exiting the screen during an active workout session
   useEffect(() => {
-    if (exerciseIds && typeof exerciseIds === "string") {
-      const ids = exerciseIds.split(",").map(Number).filter(Boolean);
-      if (ids.length > 0) {
-        const fetchPreloadedExercises = async () => {
-          try {
-            const results = await db
-              .select()
-              .from(exercises)
-              .where(inArray(exercises.id, ids));
-
-            const loaded = ids
-              .map((id) => {
-                const ex = results.find((r) => r.id === id);
-                if (ex) {
-                  return {
-                    ...ex,
-                    sets: [
-                      {
-                        id: Date.now() + Math.random(),
-                        weight: "",
-                        reps: "",
-                        isCompleted: false,
-                      },
-                    ],
-                  };
-                }
-                return null;
-              })
-              .filter(Boolean) as SelectedExercise[];
-
-            setSelectedExercises(loaded);
-          } catch (e) {
-            console.error("Error preloading exercises:", e);
-          }
-        };
-
-        fetchPreloadedExercises();
+    const unsubscribe = navigation.addListener("beforeRemove", (e) => {
+      if (isActive) {
+        // Prevent default navigation back/exit behavior
+        e.preventDefault();
+        Alert.alert(
+          "Active Session Running",
+          "You cannot exit the workout screen. Tap the down arrow in the top-left to minimize the session and browse the app, or Finish/Cancel the session.",
+          [{ text: "OK", style: "cancel" }],
+        );
       }
-    }
-  }, [exerciseIds]);
+    });
 
-  // Timer effect
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setElapsedTime((prev) => prev + 1);
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+    return unsubscribe;
+  }, [navigation, isActive]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
-  };
-
-  const handleSelectExercise = (exercise: Exercise) => {
-    // Add exercise with an initial set
-    setSelectedExercises((prev) => [
-      ...prev,
-      {
-        ...exercise,
-        sets: [{ id: Date.now(), weight: "", reps: "", isCompleted: false }],
-      },
-    ]);
-  };
-
-  const handleAddSet = (exerciseId: number) => {
-    setSelectedExercises((prev) =>
-      prev.map((ex) => {
-        if (ex.id === exerciseId) {
-          const lastSet = ex.sets[ex.sets.length - 1];
-          return {
-            ...ex,
-            sets: [
-              ...ex.sets,
-              {
-                id: Date.now(),
-                // Pre-fill weight and reps from the last set for better UX
-                weight: lastSet ? lastSet.weight : "",
-                reps: lastSet ? lastSet.reps : "",
-                isCompleted: false,
-              },
-            ],
-          };
-        }
-        return ex;
-      })
-    );
-  };
-
-  const handleUpdateSet = (
-    exerciseId: number,
-    setId: number,
-    fields: Partial<LoggedSet>
-  ) => {
-    setSelectedExercises((prev) =>
-      prev.map((ex) => {
-        if (ex.id === exerciseId) {
-          return {
-            ...ex,
-            sets: ex.sets.map((s) =>
-              s.id === setId ? { ...s, ...fields } : s
-            ),
-          };
-        }
-        return ex;
-      })
-    );
-  };
-
-  const handleRemoveSet = (exerciseId: number, setId: number) => {
-    setSelectedExercises((prev) =>
-      prev.map((ex) => {
-        if (ex.id === exerciseId) {
-          return {
-            ...ex,
-            sets: ex.sets.filter((s) => s.id !== setId),
-          };
-        }
-        return ex;
-      })
-    );
-  };
-
-  const handleRemoveExercise = (exerciseId: number) => {
-    Alert.alert(
-      "Remove Exercise",
-      "Are you sure you want to remove this exercise and all its sets?",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Remove",
-          style: "destructive",
-          onPress: () => {
-            setSelectedExercises((prev) =>
-              prev.filter((ex) => ex.id !== exerciseId)
-            );
-          },
-        },
-      ]
-    );
-  };
-
-  const ensureUser = async () => {
-    const users = await db.select().from(user).limit(1);
-    if (users.length > 0) {
-      return users[0].id;
-    }
-
-    // Insert a default user
-    await db.insert(user).values({
-      firstName: "Forge",
-      lastName: "Athlete",
-      email: "athlete@forge.com",
-      remoteId: "default_user",
-    });
-
-    const updatedUsers = await db.select().from(user).limit(1);
-    return updatedUsers[0].id;
-  };
-
-  const handleFinishSession = async () => {
-    if (selectedExercises.length === 0) {
-      Alert.alert("Empty Workout", "Please add at least one exercise before saving.");
-      return;
-    }
-
-    const completedSetsCount = selectedExercises.reduce(
-      (acc, curr) => acc + curr.sets.filter((s) => s.isCompleted).length,
-      0
-    );
-
-    if (completedSetsCount === 0) {
-      Alert.alert(
-        "No Sets Completed",
-        "You haven't marked any sets as completed. Save anyway?",
-        [
-          { text: "Cancel", style: "cancel" },
-          { text: "Save Anyway", onPress: () => saveSessionToDb() },
-        ]
-      );
-    } else {
-      saveSessionToDb();
-    }
-  };
-
-  const saveSessionToDb = async () => {
-    try {
-      const userIdVal = await ensureUser();
-      const completedSetsCount = selectedExercises.reduce(
-        (acc, curr) => acc + curr.sets.filter((s) => s.isCompleted).length,
-        0
-      );
-      const xpEarned = completedSetsCount * 10; // 10 XP per completed set
-
-      // Insert workout session
-      let sessionIdVal: number;
-      try {
-        const inserted = await db
-          .insert(workoutSessions)
-          .values({
-            name: sessionName || "Workout Session",
-            userId: userIdVal,
-            startedAt: startTime,
-            completedAt: new Date(),
-            totalXpEarned: xpEarned,
-          })
-          .returning({ id: workoutSessions.id });
-        sessionIdVal = inserted[0].id;
-      } catch (err) {
-        // Fallback query if returning is not supported by driver
-        await db.insert(workoutSessions).values({
-          name: sessionName || "Workout Session",
-          userId: userIdVal,
-          startedAt: startTime,
-          completedAt: new Date(),
-          totalXpEarned: xpEarned,
-        });
-
-        const sessions = await db
-          .select()
-          .from(workoutSessions)
-          .where(eq(workoutSessions.userId, userIdVal))
-          .orderBy(desc(workoutSessions.startedAt))
-          .limit(1);
-        sessionIdVal = sessions[0].id;
-      }
-
-      // Insert all completed sets
-      for (const ex of selectedExercises) {
-        // We log all sets, but we can prioritize weight/reps values or check completion
-        const setsToInsert = ex.sets.map((s, index) => ({
-          sessionId: sessionIdVal,
-          exerciseId: ex.id,
-          weight: parseInt(s.weight) || 0,
-          reps: parseInt(s.reps) || 0,
-          setNumber: index + 1,
-          isPr: false,
-          createdAt: new Date(),
-        }));
-
-        if (setsToInsert.length > 0) {
-          await db.insert(sets).values(setsToInsert);
-        }
-      }
-
-      Alert.alert("Workout Saved", `Completed successfully! Earned ${xpEarned} XP.`, [
-        {
-          text: "Done",
-          onPress: () => {
-            router.replace("/(tabs)/workouts");
-          },
-        },
-      ]);
-    } catch (error) {
-      console.error("Error saving workout session:", error);
-      Alert.alert("Error", "Failed to save workout session. Please try again.");
-    }
   };
 
   return (
@@ -341,14 +102,40 @@ export default function ActiveSession() {
     >
       <Stack.Screen
         options={{
-          headerRight: () => (
+          headerTitle: sessionName || "Active Session",
+          headerRight: () => {
+            const hasCompletedExercise = selectedExercises.some((ex) =>
+              ex.sets.some((s) => s.isCompleted),
+            );
+            return (
+              <Pressable
+                onPress={finishSession}
+                disabled={!hasCompletedExercise}
+                className={`px-4 py-2 rounded-full ${
+                  hasCompletedExercise
+                    ? "bg-secondary"
+                    : "bg-neutral-800 opacity-50"
+                }`}
+              >
+                <Text
+                  className={`font-spaceBold text-sm ${
+                    hasCompletedExercise ? "text-black" : "text-neutral-500"
+                  }`}
+                >
+                  Finish
+                </Text>
+              </Pressable>
+            );
+          },
+          headerLeft: () => (
             <Pressable
-              onPress={handleFinishSession}
-              className="bg-secondary px-4 py-2 rounded-full"
+              onPress={collapseSession}
+              className="bg-tertiary border border-neutral-800 p-2 rounded-full mr-2"
             >
-              <Text className="text-black font-spaceBold text-sm">Finish</Text>
+              <ChevronDown size={18} color="#fff" />
             </Pressable>
           ),
+          gestureEnabled: false, // Disable gesture swiping back on iOS
         }}
       />
 
@@ -362,15 +149,79 @@ export default function ActiveSession() {
             onChangeText={setSessionName}
             className="text-white font-spaceBold text-2xl mb-2"
           />
-          <View className="flex-row items-center">
-            <Play size={14} color="#f3ff47" className="mr-1.5" />
-            <Text className="text-secondary font-spaceBold text-sm">
-              {formatTime(elapsedTime)}
-            </Text>
-            <Text className="text-neutral-500 font-spaceRegular text-xs ml-3">
-              Active Session
-            </Text>
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row gap-2 items-center">
+              <Clock size={14} color="#f3ff47" className="mr-1.5" />
+              <Text className="text-secondary font-spaceBold text-sm">
+                {formatTime(elapsedTime)}
+              </Text>
+              <Text className="text-neutral-500 font-spaceRegular text-xs ml-3">
+                Active Session
+              </Text>
+            </View>
           </View>
+
+          {/* Rest Duration Setting Row */}
+          <View className="mt-4 pt-4 border-t border-neutral-850 flex-row items-center justify-between">
+            <View className="flex-row items-center">
+              <Text className="text-neutral-400 font-spaceMedium text-xs">
+                Rest Timer: {customRestDuration}s
+              </Text>
+            </View>
+            <View className="flex-row gap-1.5">
+              {[30, 60, 90, 120].map((sec) => (
+                <Pressable
+                  key={sec}
+                  onPress={() => setCustomRestDuration(sec)}
+                  className={`px-2.5 py-1 rounded-lg border ${
+                    customRestDuration === sec
+                      ? "bg-secondary/40 border-secondary"
+                      : "bg-primary border-neutral-900"
+                  }`}
+                >
+                  <Text
+                    className={`font-spaceBold text-[10px] ${
+                      customRestDuration === sec
+                        ? "text-secondary font-bold"
+                        : "text-neutral-400"
+                    }`}
+                  >
+                    {sec}s
+                  </Text>
+                </Pressable>
+              ))}
+            </View>
+          </View>
+
+          {/* Active Rest Countdown Box */}
+          {isRestActive && restTimeLeft > 0 && (
+            <View className="mt-4 bg-amber-500/10 border border-amber-500/25 rounded-xl p-3 flex-row justify-between items-center">
+              <View className="flex-row items-center">
+                <Coffee size={16} color="#f59e0b" className="mr-2" />
+                <View>
+                  <Text className="text-white font-spaceBold text-sm leading-tight">
+                    Resting...
+                  </Text>
+                  <Text className="text-neutral-500 font-spaceRegular text-[10px] mt-0.5">
+                    Prepare for the next set
+                  </Text>
+                </View>
+              </View>
+              <View className="flex-row items-center">
+                <Text className="text-amber-500 font-spaceBold text-lg mr-3">
+                  {restTimeLeft}s
+                </Text>
+                <Pressable
+                  onPress={stopRestTimer}
+                  className="bg-neutral-900 border border-neutral-850 px-2.5 py-1 rounded-lg"
+                >
+                  <Text className="text-white font-spaceBold text-[10px]">
+                    SKIP
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
         </View>
 
         {/* Exercises List */}
@@ -381,7 +232,8 @@ export default function ActiveSession() {
               Add Exercises
             </Text>
             <Text className="text-neutral-500 font-spaceRegular text-sm text-center">
-              Your workout is empty. Tap the button below to select exercises from the database.
+              Your workout is empty. Tap the button below to select exercises
+              from the database.
             </Text>
           </View>
         ) : (
@@ -403,7 +255,7 @@ export default function ActiveSession() {
                   </View>
                 </View>
                 <Pressable
-                  onPress={() => handleRemoveExercise(exercise.id)}
+                  onPress={() => removeExercise(exercise.id)}
                   className="p-1"
                 >
                   <Trash2 size={18} color="#ff4a4a" />
@@ -428,10 +280,7 @@ export default function ActiveSession() {
 
               {/* Set Rows */}
               {exercise.sets.map((set, index) => (
-                <View
-                  key={set.id}
-                  className="flex-row items-center mb-2 px-1"
-                >
+                <View key={set.id} className="flex-row items-center mb-2 px-1">
                   {/* Set number */}
                   <View className="w-[40px] items-center">
                     <Text className="text-white font-spaceMedium text-sm">
@@ -446,7 +295,7 @@ export default function ActiveSession() {
                     placeholderTextColor="#555"
                     value={set.weight}
                     onChangeText={(val) =>
-                      handleUpdateSet(exercise.id, set.id, { weight: val })
+                      updateSet(exercise.id, set.id, { weight: val })
                     }
                     className="bg-primary flex-1 mx-1.5 py-1.5 rounded-lg text-white text-center font-spaceBold text-sm border border-neutral-900"
                   />
@@ -458,7 +307,7 @@ export default function ActiveSession() {
                     placeholderTextColor="#555"
                     value={set.reps}
                     onChangeText={(val) =>
-                      handleUpdateSet(exercise.id, set.id, { reps: val })
+                      updateSet(exercise.id, set.id, { reps: val })
                     }
                     className="bg-primary flex-1 mx-1.5 py-1.5 rounded-lg text-white text-center font-spaceBold text-sm border border-neutral-900"
                   />
@@ -467,7 +316,7 @@ export default function ActiveSession() {
                   <View className="w-[50px] flex-row justify-center items-center">
                     <Pressable
                       onPress={() =>
-                        handleUpdateSet(exercise.id, set.id, {
+                        updateSet(exercise.id, set.id, {
                           isCompleted: !set.isCompleted,
                         })
                       }
@@ -481,7 +330,7 @@ export default function ActiveSession() {
                     </Pressable>
                     {exercise.sets.length > 1 && (
                       <Pressable
-                        onPress={() => handleRemoveSet(exercise.id, set.id)}
+                        onPress={() => removeSet(exercise.id, set.id)}
                         className="ml-2"
                       >
                         <X size={14} color="#ff4a4a" />
@@ -493,7 +342,7 @@ export default function ActiveSession() {
 
               {/* Add Set Text Button */}
               <Pressable
-                onPress={() => handleAddSet(exercise.id)}
+                onPress={() => addSet(exercise.id)}
                 className="mt-2 self-start"
               >
                 <Text className="text-secondary font-spaceBold text-sm">
@@ -508,17 +357,27 @@ export default function ActiveSession() {
         <AnimatedButton
           title="ADD EXERCISE"
           onPress={() => setIsModalVisible(true)}
-          className="bg-transparent border border-white/20 py-4 rounded-2xl items-center justify-center mb-10 flex-row"
+          className="bg-transparent border border-white/20 py-4 rounded-2xl items-center justify-center mb-6 flex-row"
           textClassName="text-white font-spaceBold text-lg"
           icon={<PlusIcon color="white" size={20} />}
         />
+
+        {/* Cancel Workout Button */}
+        <Pressable
+          onPress={cancelSession}
+          className="bg-red-500/10 border border-red-500/20 py-4 rounded-2xl items-center justify-center mb-16"
+        >
+          <Text className="text-red-500 font-spaceBold text-md">
+            CANCEL WORKOUT
+          </Text>
+        </Pressable>
       </ScrollView>
 
       {/* Exercise Picker Modal */}
       <ExerciseBottomSheet
         visible={isModalVisible}
         onClose={() => setIsModalVisible(false)}
-        onSelectExercise={handleSelectExercise}
+        onSelectExercise={addExercise}
       />
     </KeyboardAvoidingView>
   );
@@ -526,7 +385,16 @@ export default function ActiveSession() {
 
 // Quick helper to cover styling or icon dependencies without import error
 const PlusIcon = ({ color, size }: { color: string; size: number }) => (
-  <View style={{ width: size, height: size, justifyContent: "center", alignItems: "center" }}>
-    <Text style={{ color, fontSize: size, fontWeight: "bold", top: -1 }}>+</Text>
+  <View
+    style={{
+      width: size,
+      height: size,
+      justifyContent: "center",
+      alignItems: "center",
+    }}
+  >
+    <Text style={{ color, fontSize: size, fontWeight: "bold", top: -1 }}>
+      +
+    </Text>
   </View>
 );

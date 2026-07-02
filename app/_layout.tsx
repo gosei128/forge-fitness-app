@@ -13,6 +13,9 @@ import { seedExercises } from "../db/seed";
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
+import { WorkoutSessionProvider } from "../context/WorkoutSessionContext";
+import ActiveWorkoutFloatingBar from "../components/ActiveWorkoutFloatingBar";
+
 const RootLayout = () => {
   const { success: migrationsSuccess, error: migrationsError } = useMigrations(
     db,
@@ -49,17 +52,20 @@ const RootLayout = () => {
   }
 
   return (
-    <>
-      <Stack
-        screenOptions={{
-          contentStyle: { backgroundColor: "#131316" },
-        }}
-      >
-        <Stack.Screen name={"(tabs)"} options={{ headerShown: false }} />
-        <Stack.Screen name={"(workouts)"} options={{ headerShown: false }} />
-        <Stack.Screen name={"(exercises)"} options={{ headerShown: false }} />
-      </Stack>
-    </>
+    <WorkoutSessionProvider>
+      <View style={{ flex: 1 }}>
+        <Stack
+          screenOptions={{
+            contentStyle: { backgroundColor: "#131316" },
+          }}
+        >
+          <Stack.Screen name={"(tabs)"} options={{ headerShown: false }} />
+          <Stack.Screen name={"(workouts)"} options={{ headerShown: false }} />
+          <Stack.Screen name={"(exercises)"} options={{ headerShown: false }} />
+        </Stack>
+        <ActiveWorkoutFloatingBar />
+      </View>
+    </WorkoutSessionProvider>
   );
 };
 export default RootLayout;
