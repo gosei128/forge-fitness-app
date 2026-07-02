@@ -38,7 +38,7 @@ export default function ActiveWorkoutFloatingBar() {
           top: insets.top + 8,
         },
       ]}
-      className="bg-tertiary border h-20  border-primary rounded-2xl flex-row items-center px-4 py-3"
+      className="bg-tertiary border h-35  border-primary rounded-2xl flex-row items-center px-4 py-3"
     >
       <Pressable
         onPress={expandSession}
@@ -52,7 +52,7 @@ export default function ActiveWorkoutFloatingBar() {
           <View className="flex-1">
             <Text
               numberOfLines={1}
-              className="text-white font-spaceBold text-sm leading-tight"
+              className="text-white font-spaceBold text-2xl leading-tight"
             >
               {sessionName || "Active Workout"}
             </Text>

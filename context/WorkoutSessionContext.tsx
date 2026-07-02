@@ -1,17 +1,23 @@
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { Alert, Vibration } from "react-native";
 import { router } from "expo-router";
-
 // Dynamically import Audio from expo-av to prevent crashes on start if the native module is not compiled/built
 let Audio: any = null;
 try {
   const expoAV = require("expo-av");
   Audio = expoAV.Audio;
 } catch (e) {
-  console.log("[WorkoutSession] expo-av native module not available. Rest timer sound will be disabled.");
+  console.log(
+    "[WorkoutSession] expo-av native module not available. Rest timer sound will be disabled.",
+  );
 }
 import { db } from "../db";
-import { user, workoutSessions, sets, exercises as dbExercises } from "../db/schema";
+import {
+  user,
+  workoutSessions,
+  sets,
+  exercises as dbExercises,
+} from "../db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 
 export interface LoggedSet {
@@ -50,21 +56,31 @@ interface WorkoutSessionContextType {
   addExercise: (exercise: any) => void;
   removeExercise: (exerciseId: number) => void;
   addSet: (exerciseId: number) => void;
-  updateSet: (exerciseId: number, setId: number, fields: Partial<LoggedSet>) => void;
+  updateSet: (
+    exerciseId: number,
+    setId: number,
+    fields: Partial<LoggedSet>,
+  ) => void;
   removeSet: (exerciseId: number, setId: number) => void;
   setCustomRestDuration: (seconds: number) => void;
   startRestTimer: () => void;
   stopRestTimer: () => void;
 }
 
-const WorkoutSessionContext = createContext<WorkoutSessionContextType | undefined>(undefined);
+const WorkoutSessionContext = createContext<
+  WorkoutSessionContextType | undefined
+>(undefined);
 
-export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+export const WorkoutSessionProvider: React.FC<{
+  children: React.ReactNode;
+}> = ({ children }) => {
   const [isActive, setIsActive] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [sessionName, setSessionNameState] = useState("");
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [selectedExercises, setSelectedExercises] = useState<SelectedExercise[]>([]);
+  const [selectedExercises, setSelectedExercises] = useState<
+    SelectedExercise[]
+  >([]);
   const [startTime, setStartTime] = useState<Date | null>(null);
 
   // Rest Timer States
@@ -112,7 +128,7 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
   const triggerRestCompleteFeedback = async () => {
     // Vibrate device
     Vibration.vibrate([0, 500, 200, 500]);
-    
+
     // Play sound beep if Audio is available
     if (Audio) {
       try {
@@ -124,7 +140,7 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
         });
 
         const { sound } = await Audio.Sound.createAsync(
-          { uri: "https://assets.mixkit.co/active_storage/sfx/2869/2869-84.wav" }
+          require("../assets/audio/notif.wav"),
         );
         await sound.playAsync();
 
@@ -235,7 +251,7 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
       const userIdVal = await ensureUser();
       const completedSetsCount = selectedExercises.reduce(
         (acc, curr) => acc + curr.sets.filter((s) => s.isCompleted).length,
-        0
+        0,
       );
       const xpEarned = completedSetsCount * 10;
 
@@ -286,19 +302,23 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
         }
       }
 
-      Alert.alert("Workout Saved", `Completed successfully! Earned ${xpEarned} XP.`, [
-        {
-          text: "Done",
-          onPress: () => {
-            setIsActive(false);
-            setSelectedExercises([]);
-            setSessionNameState("");
-            setElapsedTime(0);
-            setIsCollapsed(false);
-            router.replace("/(tabs)/workouts");
+      Alert.alert(
+        "Workout Saved",
+        `Completed successfully! Earned ${xpEarned} XP.`,
+        [
+          {
+            text: "Done",
+            onPress: () => {
+              setIsActive(false);
+              setSelectedExercises([]);
+              setSessionNameState("");
+              setElapsedTime(0);
+              setIsCollapsed(false);
+              router.replace("/(tabs)/workouts");
+            },
           },
-        },
-      ]);
+        ],
+      );
     } catch (error) {
       console.error("Error saving workout session in context:", error);
       Alert.alert("Error", "Failed to save workout session. Please try again.");
@@ -309,13 +329,13 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
     // Check if at least one exercise is completed (finished)
     // A finished/completed exercise must have at least one completed set.
     const hasCompletedExercise = selectedExercises.some((ex) =>
-      ex.sets.some((s) => s.isCompleted)
+      ex.sets.some((s) => s.isCompleted),
     );
 
     if (!hasCompletedExercise) {
       Alert.alert(
         "Cannot Finish",
-        "You must complete at least one set of an exercise to finish the session."
+        "You must complete at least one set of an exercise to finish the session.",
       );
       return;
     }
@@ -343,7 +363,7 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
             router.replace("/(tabs)/workouts");
           },
         },
-      ]
+      ],
     );
   };
 
@@ -351,7 +371,10 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
     setSelectedExercises((prev) => {
       // Check if exercise is already added
       if (prev.some((ex) => ex.id === exercise.id)) {
-        Alert.alert("Already Added", `${exercise.name} is already in this session.`);
+        Alert.alert(
+          "Already Added",
+          `${exercise.name} is already in this session.`,
+        );
         return prev;
       }
       return [
@@ -374,10 +397,12 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
           text: "Remove",
           style: "destructive",
           onPress: () => {
-            setSelectedExercises((prev) => prev.filter((ex) => ex.id !== exerciseId));
+            setSelectedExercises((prev) =>
+              prev.filter((ex) => ex.id !== exerciseId),
+            );
           },
         },
-      ]
+      ],
     );
   };
 
@@ -400,11 +425,15 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
           };
         }
         return ex;
-      })
+      }),
     );
   };
 
-  const updateSet = (exerciseId: number, setId: number, fields: Partial<LoggedSet>) => {
+  const updateSet = (
+    exerciseId: number,
+    setId: number,
+    fields: Partial<LoggedSet>,
+  ) => {
     setSelectedExercises((prev) =>
       prev.map((ex) => {
         if (ex.id === exerciseId) {
@@ -425,7 +454,7 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
           };
         }
         return ex;
-      })
+      }),
     );
   };
 
@@ -439,7 +468,7 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
           };
         }
         return ex;
-      })
+      }),
     );
   };
 
@@ -491,7 +520,9 @@ export const WorkoutSessionProvider: React.FC<{ children: React.ReactNode }> = (
 export const useWorkoutSession = () => {
   const context = useContext(WorkoutSessionContext);
   if (context === undefined) {
-    throw new Error("useWorkoutSession must be used within a WorkoutSessionProvider");
+    throw new Error(
+      "useWorkoutSession must be used within a WorkoutSessionProvider",
+    );
   }
   return context;
 };
