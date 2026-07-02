@@ -26,7 +26,8 @@ export const workoutSessions = sqliteTable("workout_sessions", {
     userId : int("user_id").notNull().references(() => user.id),
     startedAt : int("started_at", {mode: "timestamp"}).$defaultFn(()=> new Date()),
     completedAt : int("completed_at", {mode: "timestamp"}),
-    totalXpEarned : int("total_xp_earned").notNull().default(0)
+    totalXpEarned : int("total_xp_earned").notNull().default(0),
+    restTime : int("rest_time").notNull().default(60)
 })
 
 export const sets = sqliteTable("sets", {
@@ -37,6 +38,7 @@ export const sets = sqliteTable("sets", {
     reps : int("reps").notNull(),
     setNumber : int("set_number").notNull(),
     isPr : int("is_pr", {mode : "boolean"}).default(false),
+    weightUnit : text("weight_unit").notNull().default("lbs"),
     createdAt : int("created_at", {mode : "timestamp"}).$defaultFn(()=> new Date())
 })
 
@@ -47,6 +49,7 @@ export const personalRecords = sqliteTable("personal_records", {
     setId : int("set_id").notNull().references(()=> sets.id),
     weight : int("weight").notNull(),
     reps : int("reps").notNull(),
+    weightUnit : text("weight_unit").notNull().default("lbs"),
     achievedAt : int("achieved_at", {mode : "timestamp"}).$defaultFn(()=> new Date())
 
 }, (table)=>[uniqueIndex("user_exercise_pr_idx").on(table.userId, table.exerciseId)])
@@ -59,6 +62,22 @@ export const userStats = sqliteTable("user_stats", {
     currentStreak : int("current_streak").notNull().default(0),
     longestStreak : int("longest_streak").notNull().default(0),
     lastWorkoutAt : int("last_workout_at", {mode : "timestamp"}),
+})
+
+export const workoutTemplates = sqliteTable("workout_templates", {
+    id: int("id").primaryKey({autoIncrement : true}),
+    userId: int("user_id").notNull().references(() => user.id),
+    name: text("name").notNull(),
+    restTime: int("rest_time").notNull().default(60),
+    weightUnit: text("weight_unit").notNull().default("lbs"),
+    createdAt: int("created_at", {mode: "timestamp"}).$defaultFn(() => new Date())
+})
+
+export const templateExercises = sqliteTable("template_exercises", {
+    id: int("id").primaryKey({autoIncrement : true}),
+    templateId: int("template_id").notNull().references(() => workoutTemplates.id),
+    exerciseId: int("exercise_id").notNull().references(() => exercises.id),
+    orderNumber: int("order_number").notNull()
 })
 
 
@@ -113,5 +132,24 @@ export const userStatRelation = relations(userStats, ({one}) => ({
     user: one(user, {
         fields: [userStats.userId],
         references: [user.id]
+    })
+}));
+
+export const workoutTemplatesRelations = relations(workoutTemplates, ({one, many}) => ({
+    user: one(user, {
+        fields: [workoutTemplates.userId],
+        references: [user.id]
+    }),
+    exercises: many(templateExercises)
+}));
+
+export const templateExercisesRelations = relations(templateExercises, ({one}) => ({
+    template: one(workoutTemplates, {
+        fields: [templateExercises.templateId],
+        references: [workoutTemplates.id]
+    }),
+    exercise: one(exercises, {
+        fields: [templateExercises.exerciseId],
+        references: [exercises.id]
     })
 }));

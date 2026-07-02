@@ -10,7 +10,8 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { Stack, useLocalSearchParams, useNavigation } from "expo-router";
+import { Stack, useLocalSearchParams, useNavigation, useFocusEffect } from "expo-router";
+
 import {
   Trash2,
   Check,
@@ -25,6 +26,8 @@ import AnimatedButton from "../../components/AnimatedButton";
 import ExerciseBottomSheet from "../../components/ExerciseBottomSheet";
 import { useWorkoutSession } from "../../context/WorkoutSessionContext";
 
+
+
 const capitalize = (str: string) => {
   if (!str) return "";
   return str
@@ -35,7 +38,7 @@ const capitalize = (str: string) => {
 
 export default function ActiveSession() {
   const params = useLocalSearchParams();
-  const { title, exerciseIds } = params;
+  const { title, exerciseIds, restTime, weightUnit: weightUnitParam } = params;
   const navigation = useNavigation();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -60,16 +63,21 @@ export default function ActiveSession() {
     isRestActive,
     setCustomRestDuration,
     stopRestTimer,
+    weightUnit,
   } = useWorkoutSession();
 
-  // Initialize session in global context on mount if it's not already active
-  useEffect(() => {
-    if (!isActive) {
-      const titleStr = typeof title === "string" ? title : "";
-      const idsStr = typeof exerciseIds === "string" ? exerciseIds : "";
-      startSession(titleStr, idsStr);
-    }
-  }, [isActive, title, exerciseIds]);
+  // Initialize session in global context on focus if it's not already active
+  useFocusEffect(
+    React.useCallback(() => {
+      if (!isActive) {
+        const titleStr = typeof title === "string" ? title : "";
+        const idsStr = typeof exerciseIds === "string" ? exerciseIds : "";
+        const restVal = typeof restTime === "string" ? parseInt(restTime) : undefined;
+        const unitStr = typeof weightUnitParam === "string" ? weightUnitParam : undefined;
+        startSession(titleStr, idsStr, restVal, unitStr);
+      }
+    }, [isActive, title, exerciseIds, restTime, weightUnitParam])
+  );
 
   // Block exiting the screen during an active workout session
   useEffect(() => {
@@ -267,8 +275,8 @@ export default function ActiveSession() {
                 <Text className="text-neutral-500 font-spaceBold text-xs w-[40px] text-center">
                   SET
                 </Text>
-                <Text className="text-neutral-500 font-spaceBold text-xs flex-1 text-center">
-                  LBS
+                <Text className="text-neutral-500 font-spaceBold text-xs flex-1 text-center uppercase">
+                  {weightUnit}
                 </Text>
                 <Text className="text-neutral-500 font-spaceBold text-xs flex-1 text-center">
                   REPS

@@ -19,6 +19,8 @@ import {
   exercises as dbExercises,
 } from "../db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
+import { completeWorkoutSession } from "../lib/sessionCompletion";
+
 
 export interface LoggedSet {
   id: number;
@@ -47,7 +49,9 @@ interface WorkoutSessionContextType {
   customRestDuration: number;
   isRestActive: boolean;
   startTime: Date | null;
-  startSession: (title: string, exerciseIds?: string) => Promise<void>;
+  weightUnit: string;
+  setWeightUnit: (unit: string) => void;
+  startSession: (title: string, exerciseIds?: string, defaultRestDuration?: number, defaultWeightUnit?: string) => Promise<void>;
   collapseSession: () => void;
   expandSession: () => void;
   finishSession: () => Promise<void>;
@@ -86,6 +90,7 @@ export const WorkoutSessionProvider: React.FC<{
   // Rest Timer States
   const [restTimeLeft, setRestTimeLeft] = useState(0);
   const [customRestDuration, setCustomRestDuration] = useState(60); // default 60s
+  const [weightUnit, setWeightUnitState] = useState<string>("lbs");
   const [isRestActive, setIsRestActive] = useState(false);
 
   // Active session timer effect
@@ -155,12 +160,19 @@ export const WorkoutSessionProvider: React.FC<{
     }
   };
 
-  const startSession = async (title: string, exerciseIds?: string) => {
+  const startSession = async (
+    title: string,
+    exerciseIds?: string,
+    defaultRestDuration?: number,
+    defaultWeightUnit?: string
+  ) => {
     setStartTime(new Date());
     setElapsedTime(0);
     setIsCollapsed(false);
     setRestTimeLeft(0);
     setIsRestActive(false);
+    setCustomRestDuration(defaultRestDuration ?? 60);
+    setWeightUnitState(defaultWeightUnit ?? "lbs");
 
     if (title) {
       setSessionNameState(title);
@@ -249,11 +261,6 @@ export const WorkoutSessionProvider: React.FC<{
   const saveSessionToDb = async () => {
     try {
       const userIdVal = await ensureUser();
-      const completedSetsCount = selectedExercises.reduce(
-        (acc, curr) => acc + curr.sets.filter((s) => s.isCompleted).length,
-        0,
-      );
-      const xpEarned = completedSetsCount * 10;
 
       let sessionIdVal: number;
       try {
@@ -263,8 +270,9 @@ export const WorkoutSessionProvider: React.FC<{
             name: sessionName || "Workout Session",
             userId: userIdVal,
             startedAt: startTime || new Date(),
-            completedAt: new Date(),
-            totalXpEarned: xpEarned,
+            completedAt: null, // Will be set in completeWorkoutSession
+            totalXpEarned: 0, // Will be set in completeWorkoutSession
+            restTime: customRestDuration,
           })
           .returning({ id: workoutSessions.id });
         sessionIdVal = inserted[0].id;
@@ -273,8 +281,9 @@ export const WorkoutSessionProvider: React.FC<{
           name: sessionName || "Workout Session",
           userId: userIdVal,
           startedAt: startTime || new Date(),
-          completedAt: new Date(),
-          totalXpEarned: xpEarned,
+          completedAt: null,
+          totalXpEarned: 0,
+          restTime: customRestDuration,
         });
 
         const sessions = await db
@@ -286,14 +295,17 @@ export const WorkoutSessionProvider: React.FC<{
         sessionIdVal = sessions[0].id;
       }
 
+      // Filter and insert only COMPLETED sets into the database
       for (const ex of selectedExercises) {
-        const setsToInsert = ex.sets.map((s, index) => ({
+        const completedSets = ex.sets.filter((s) => s.isCompleted);
+        const setsToInsert = completedSets.map((s, index) => ({
           sessionId: sessionIdVal,
           exerciseId: ex.id,
           weight: parseInt(s.weight) || 0,
           reps: parseInt(s.reps) || 0,
           setNumber: index + 1,
           isPr: false,
+          weightUnit: weightUnit,
           createdAt: new Date(),
         }));
 
@@ -302,9 +314,21 @@ export const WorkoutSessionProvider: React.FC<{
         }
       }
 
+      // Complete the workout session: check PRs, calculate XP, and update userStats / streak
+      const completionResult = await completeWorkoutSession(sessionIdVal, userIdVal);
+      const prsCount = completionResult.isPRs.filter(Boolean).length;
+
+      let message = `Completed successfully! Earned ${completionResult.totalXP} XP.`;
+      if (prsCount > 0) {
+        message += `\n\n🔥 ${prsCount} Personal Record${prsCount > 1 ? "s" : ""} achieved!`;
+      }
+      if (completionResult.leveledUp) {
+        message += `\n\n🎉 LEVEL UP! You reached Level ${completionResult.newLevel}! 🎉`;
+      }
+
       Alert.alert(
         "Workout Saved",
-        `Completed successfully! Earned ${xpEarned} XP.`,
+        message,
         [
           {
             text: "Done",
@@ -496,6 +520,8 @@ export const WorkoutSessionProvider: React.FC<{
         customRestDuration,
         isRestActive,
         startTime,
+        weightUnit,
+        setWeightUnit: setWeightUnitState,
         startSession,
         collapseSession,
         expandSession,

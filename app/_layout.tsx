@@ -5,10 +5,12 @@ import { db } from "../db";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { Stack } from "expo-router";
 import "../global.css";
-import { exercises } from "../db/schema";
+import { exercises, user } from "../db/schema";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { seedExercises } from "../db/seed";
+import Onboarding from "../components/Onboarding";
+import { useState } from "react";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -22,6 +24,8 @@ const RootLayout = () => {
     migration,
   );
 
+  const [hasUser, setHasUser] = useState<boolean | null>(null);
+
   const [fontsLoaded, fontsError] = useFonts({
     "SpaceGrotesk-Light": require("../assets/fonts/static/SpaceGrotesk-Light.ttf"),
     "SpaceGrotesk-Regular": require("../assets/fonts/static/SpaceGrotesk-Regular.ttf"),
@@ -33,22 +37,40 @@ const RootLayout = () => {
   useEffect(() => {
     if (migrationsSuccess) {
       seedExercises()
-        .then(() => console.log("Database seeded successfully"))
-        .catch((err) => console.error("Database seeding failed:", err));
+        .then(() => {
+          console.log("Database seeded successfully");
+          return db.select().from(user).limit(1);
+        })
+        .then((users) => {
+          setHasUser(users.length > 0);
+        })
+        .catch((err) => {
+          console.error("Database seeding/user check failed:", err);
+          setHasUser(false);
+        });
     }
   }, [migrationsSuccess]);
 
   useEffect(() => {
-    if ((fontsLoaded || fontsError) && (migrationsSuccess || migrationsError)) {
+    if (
+      (fontsLoaded || fontsError) &&
+      (migrationsSuccess || migrationsError) &&
+      hasUser !== null
+    ) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontsError, migrationsSuccess, migrationsError]);
+  }, [fontsLoaded, fontsError, migrationsSuccess, migrationsError, hasUser]);
 
   if (
     (!fontsLoaded && !fontsError) ||
-    (!migrationsSuccess && !migrationsError)
+    (!migrationsSuccess && !migrationsError) ||
+    hasUser === null
   ) {
     return null;
+  }
+
+  if (!hasUser) {
+    return <Onboarding onComplete={() => setHasUser(true)} />;
   }
 
   return (

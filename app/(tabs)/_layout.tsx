@@ -29,6 +29,12 @@ const TabLayout = () => {
           title: "Exercises",
         }}
       />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: "Profile",
+        }}
+      />
     </Tabs>
   );
 };

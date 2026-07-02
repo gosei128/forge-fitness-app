@@ -22,6 +22,13 @@
       "when": 1782909128585,
       "tag": "0002_whole_tana_nile",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1783012712501,
+      "tag": "0003_safe_joseph",
+      "breakpoints": true
     }
   ]
 }
