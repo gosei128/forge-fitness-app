@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { router } from "expo-router";
 import {
   Pressable,
   ScrollView,
@@ -10,7 +11,12 @@ import {
   Platform,
   Alert,
 } from "react-native";
-import { Stack, useLocalSearchParams, useNavigation, useFocusEffect } from "expo-router";
+import {
+  Stack,
+  useLocalSearchParams,
+  useNavigation,
+  useFocusEffect,
+} from "expo-router";
 
 import {
   Trash2,
@@ -21,12 +27,12 @@ import {
   ChevronDown,
   Coffee,
   Clock,
+  MoreVertical,
 } from "lucide-react-native";
 import AnimatedButton from "../../components/AnimatedButton";
 import ExerciseBottomSheet from "../../components/ExerciseBottomSheet";
+import UnitDropdownMenu from "../../components/UnitDropdownMenu";
 import { useWorkoutSession } from "../../context/WorkoutSessionContext";
-
-
 
 const capitalize = (str: string) => {
   if (!str) return "";
@@ -42,6 +48,7 @@ export default function ActiveSession() {
   const navigation = useNavigation();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [unitDropdown, setUnitDropdown] = useState<{ exerciseId: number; currentUnit: string } | null>(null);
 
   const {
     isActive,
@@ -63,21 +70,20 @@ export default function ActiveSession() {
     isRestActive,
     setCustomRestDuration,
     stopRestTimer,
-    weightUnit,
+    updateExerciseUnit,
   } = useWorkoutSession();
 
-  // Initialize session in global context on focus if it's not already active
-  useFocusEffect(
-    React.useCallback(() => {
-      if (!isActive) {
-        const titleStr = typeof title === "string" ? title : "";
-        const idsStr = typeof exerciseIds === "string" ? exerciseIds : "";
-        const restVal = typeof restTime === "string" ? parseInt(restTime) : undefined;
-        const unitStr = typeof weightUnitParam === "string" ? weightUnitParam : undefined;
-        startSession(titleStr, idsStr, restVal, unitStr);
-      }
-    }, [isActive, title, exerciseIds, restTime, weightUnitParam])
-  );
+  // Redirect back if no session is active
+  useEffect(() => {
+    if (!isActive) {
+      router.replace("/(tabs)/workouts");
+    }
+  }, [isActive]);
+
+  const handleEditUnit = (exerciseId: number, currentUnit: string) => {
+    setUnitDropdown({ exerciseId, currentUnit });
+  };
+
 
   // Block exiting the screen during an active workout session
   useEffect(() => {
@@ -262,12 +268,22 @@ export default function ActiveSession() {
                     </Text>
                   </View>
                 </View>
-                <Pressable
-                  onPress={() => removeExercise(exercise.id)}
-                  className="p-1"
-                >
-                  <Trash2 size={18} color="#ff4a4a" />
-                </Pressable>
+                <View className="flex-row gap-1 items-center">
+                  <Pressable
+                    onPress={() =>
+                      handleEditUnit(exercise.id, exercise.weightUnit)
+                    }
+                    className="p-1 mr-1"
+                  >
+                    <MoreVertical size={18} color="#f3ff47" />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => removeExercise(exercise.id)}
+                    className="p-1"
+                  >
+                    <Trash2 size={18} color="#ff4a4a" />
+                  </Pressable>
+                </View>
               </View>
 
               {/* Table Column Headers */}
@@ -276,7 +292,7 @@ export default function ActiveSession() {
                   SET
                 </Text>
                 <Text className="text-neutral-500 font-spaceBold text-xs flex-1 text-center uppercase">
-                  {weightUnit}
+                  {exercise.weightUnit}
                 </Text>
                 <Text className="text-neutral-500 font-spaceBold text-xs flex-1 text-center">
                   REPS
@@ -386,6 +402,16 @@ export default function ActiveSession() {
         visible={isModalVisible}
         onClose={() => setIsModalVisible(false)}
         onSelectExercise={addExercise}
+      />
+
+      {/* Unit Picker Dropdown */}
+      <UnitDropdownMenu
+        visible={unitDropdown !== null}
+        currentUnit={unitDropdown?.currentUnit ?? "lbs"}
+        onSelect={(unit) => {
+          if (unitDropdown) updateExerciseUnit(unitDropdown.exerciseId, unit);
+        }}
+        onClose={() => setUnitDropdown(null)}
       />
     </KeyboardAvoidingView>
   );

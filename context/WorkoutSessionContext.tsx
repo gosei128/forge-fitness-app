@@ -18,9 +18,8 @@ import {
   sets,
   exercises as dbExercises,
 } from "../db/schema";
-import { eq, desc, inArray } from "drizzle-orm";
+import { eq, desc, inArray, and } from "drizzle-orm";
 import { completeWorkoutSession } from "../lib/sessionCompletion";
-
 
 export interface LoggedSet {
   id: number;
@@ -36,6 +35,7 @@ export interface SelectedExercise {
   equipment: string | null;
   category: string | null;
   instructions: string | null;
+  weightUnit: string;
   sets: LoggedSet[];
 }
 
@@ -49,15 +49,18 @@ interface WorkoutSessionContextType {
   customRestDuration: number;
   isRestActive: boolean;
   startTime: Date | null;
-  weightUnit: string;
-  setWeightUnit: (unit: string) => void;
-  startSession: (title: string, exerciseIds?: string, defaultRestDuration?: number, defaultWeightUnit?: string) => Promise<void>;
+  startSession: (
+    title: string,
+    exerciseIds?: string,
+    defaultRestDuration?: number,
+    exerciseUnitsList?: string,
+  ) => Promise<void>;
   collapseSession: () => void;
   expandSession: () => void;
   finishSession: () => Promise<void>;
   cancelSession: () => void;
   setSessionName: (name: string) => void;
-  addExercise: (exercise: any) => void;
+  addExercise: (exercise: any, unit?: string) => void;
   removeExercise: (exerciseId: number) => void;
   addSet: (exerciseId: number) => void;
   updateSet: (
@@ -66,6 +69,7 @@ interface WorkoutSessionContextType {
     fields: Partial<LoggedSet>,
   ) => void;
   removeSet: (exerciseId: number, setId: number) => void;
+  updateExerciseUnit: (exerciseId: number, unit: string) => void;
   setCustomRestDuration: (seconds: number) => void;
   startRestTimer: () => void;
   stopRestTimer: () => void;
@@ -90,7 +94,6 @@ export const WorkoutSessionProvider: React.FC<{
   // Rest Timer States
   const [restTimeLeft, setRestTimeLeft] = useState(0);
   const [customRestDuration, setCustomRestDuration] = useState(60); // default 60s
-  const [weightUnit, setWeightUnitState] = useState<string>("lbs");
   const [isRestActive, setIsRestActive] = useState(false);
 
   // Active session timer effect
@@ -164,7 +167,7 @@ export const WorkoutSessionProvider: React.FC<{
     title: string,
     exerciseIds?: string,
     defaultRestDuration?: number,
-    defaultWeightUnit?: string
+    exerciseUnitsList?: string,
   ) => {
     setStartTime(new Date());
     setElapsedTime(0);
@@ -172,7 +175,8 @@ export const WorkoutSessionProvider: React.FC<{
     setRestTimeLeft(0);
     setIsRestActive(false);
     setCustomRestDuration(defaultRestDuration ?? 60);
-    setWeightUnitState(defaultWeightUnit ?? "lbs");
+
+    const userIdVal = await ensureUser();
 
     if (title) {
       setSessionNameState(title);
@@ -187,6 +191,8 @@ export const WorkoutSessionProvider: React.FC<{
 
     if (exerciseIds) {
       const ids = exerciseIds.split(",").map(Number).filter(Boolean);
+      const units = exerciseUnitsList ? exerciseUnitsList.split(",") : [];
+
       if (ids.length > 0) {
         try {
           const results = await db
@@ -194,27 +200,70 @@ export const WorkoutSessionProvider: React.FC<{
             .from(dbExercises)
             .where(inArray(dbExercises.id, ids));
 
-          const loaded = ids
-            .map((id) => {
-              const ex = results.find((r) => r.id === id);
-              if (ex) {
-                return {
-                  ...ex,
-                  sets: [
-                    {
-                      id: Date.now() + Math.random(),
-                      weight: "",
-                      reps: "",
-                      isCompleted: false,
-                    },
-                  ],
-                };
-              }
-              return null;
-            })
-            .filter(Boolean) as SelectedExercise[];
+          const loadedList: SelectedExercise[] = [];
 
-          setSelectedExercises(loaded);
+          for (let index = 0; index < ids.length; index++) {
+            const id = ids[index];
+            const ex = results.find((r) => r.id === id);
+            if (!ex) continue;
+
+            const unit: string = units[index] || "lbs";
+
+            // Find the most recent session that logged this exercise for this user
+            const lastSetRow = await db
+              .select({ sessionId: sets.sessionId })
+              .from(sets)
+              .innerJoin(workoutSessions, eq(sets.sessionId, workoutSessions.id))
+              .where(
+                and(
+                  eq(sets.exerciseId, id),
+                  eq(workoutSessions.userId, userIdVal),
+                ),
+              )
+              .orderBy(desc(sets.createdAt))
+              .limit(1);
+
+            let initialSets: LoggedSet[] = [];
+
+            if (lastSetRow.length > 0) {
+              const prevSets = await db
+                .select()
+                .from(sets)
+                .where(
+                  and(
+                    eq(sets.exerciseId, id),
+                    eq(sets.sessionId, lastSetRow[0].sessionId),
+                  ),
+                )
+                .orderBy(sets.setNumber);
+
+              // Pre-fill previous weights & reps — not marked completed
+              initialSets = prevSets.map(
+                (ps): LoggedSet => ({
+                  id: Date.now() + Math.random(),
+                  weight: ps.weight.toString(),
+                  reps: ps.reps.toString(),
+                  isCompleted: false,
+                }),
+              );
+            }
+
+            // Fallback: one blank set if no prior history
+            if (initialSets.length === 0) {
+              initialSets = [
+                {
+                  id: Date.now() + Math.random(),
+                  weight: "",
+                  reps: "",
+                  isCompleted: false,
+                },
+              ];
+            }
+
+            loadedList.push({ ...ex, weightUnit: unit, sets: initialSets });
+          }
+
+          setSelectedExercises(loadedList);
         } catch (e) {
           console.error("Error preloading exercises in context:", e);
         }
@@ -305,7 +354,7 @@ export const WorkoutSessionProvider: React.FC<{
           reps: parseInt(s.reps) || 0,
           setNumber: index + 1,
           isPr: false,
-          weightUnit: weightUnit,
+          weightUnit: ex.weightUnit || "lbs",
           createdAt: new Date(),
         }));
 
@@ -315,7 +364,10 @@ export const WorkoutSessionProvider: React.FC<{
       }
 
       // Complete the workout session: check PRs, calculate XP, and update userStats / streak
-      const completionResult = await completeWorkoutSession(sessionIdVal, userIdVal);
+      const completionResult = await completeWorkoutSession(
+        sessionIdVal,
+        userIdVal,
+      );
       const prsCount = completionResult.isPRs.filter(Boolean).length;
 
       let message = `Completed successfully! Earned ${completionResult.totalXP} XP.`;
@@ -326,23 +378,19 @@ export const WorkoutSessionProvider: React.FC<{
         message += `\n\n🎉 LEVEL UP! You reached Level ${completionResult.newLevel}! 🎉`;
       }
 
-      Alert.alert(
-        "Workout Saved",
-        message,
-        [
-          {
-            text: "Done",
-            onPress: () => {
-              setIsActive(false);
-              setSelectedExercises([]);
-              setSessionNameState("");
-              setElapsedTime(0);
-              setIsCollapsed(false);
-              router.replace("/(tabs)/workouts");
-            },
+      Alert.alert("Workout Saved", message, [
+        {
+          text: "Done",
+          onPress: () => {
+            setIsActive(false);
+            setSelectedExercises([]);
+            setSessionNameState("");
+            setElapsedTime(0);
+            setIsCollapsed(false);
+            router.replace("/(tabs)/workouts");
           },
-        ],
-      );
+        },
+      ]);
     } catch (error) {
       console.error("Error saving workout session in context:", error);
       Alert.alert("Error", "Failed to save workout session. Please try again.");
@@ -391,7 +439,7 @@ export const WorkoutSessionProvider: React.FC<{
     );
   };
 
-  const addExercise = (exercise: any) => {
+  const addExercise = (exercise: any, unit: string = "lbs") => {
     setSelectedExercises((prev) => {
       // Check if exercise is already added
       if (prev.some((ex) => ex.id === exercise.id)) {
@@ -405,10 +453,22 @@ export const WorkoutSessionProvider: React.FC<{
         ...prev,
         {
           ...exercise,
+          weightUnit: unit,
           sets: [{ id: Date.now(), weight: "", reps: "", isCompleted: false }],
         },
       ];
     });
+  };
+
+  const updateExerciseUnit = (exerciseId: number, unit: string) => {
+    setSelectedExercises((prev) =>
+      prev.map((ex) => {
+        if (ex.id === exerciseId) {
+          return { ...ex, weightUnit: unit };
+        }
+        return ex;
+      }),
+    );
   };
 
   const removeExercise = (exerciseId: number) => {
@@ -520,8 +580,6 @@ export const WorkoutSessionProvider: React.FC<{
         customRestDuration,
         isRestActive,
         startTime,
-        weightUnit,
-        setWeightUnit: setWeightUnitState,
         startSession,
         collapseSession,
         expandSession,
@@ -533,6 +591,7 @@ export const WorkoutSessionProvider: React.FC<{
         addSet,
         updateSet,
         removeSet,
+        updateExerciseUnit,
         setCustomRestDuration,
         startRestTimer,
         stopRestTimer,

@@ -22,6 +22,10 @@ const WorkoutLayout = () => {
           headerTitleAlign: "center",
         }}
       />
+      <Stack.Screen
+        name="edit-workout/[id]"
+        options={{ headerShown: false, title: "Edit Workout" }}
+      />
     </Stack>
   );
 };

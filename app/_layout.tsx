@@ -35,6 +35,8 @@ const RootLayout = () => {
   });
 
   useEffect(() => {
+    let isMounted = true;
+
     if (migrationsSuccess) {
       seedExercises()
         .then(() => {
@@ -42,13 +44,21 @@ const RootLayout = () => {
           return db.select().from(user).limit(1);
         })
         .then((users) => {
-          setHasUser(users.length > 0);
+          if (isMounted) {
+            setHasUser(users.length > 0);
+          }
         })
         .catch((err) => {
           console.error("Database seeding/user check failed:", err);
-          setHasUser(false);
+          if (isMounted) {
+            setHasUser(false);
+          }
         });
     }
+
+    return () => {
+      isMounted = false;
+    };
   }, [migrationsSuccess]);
 
   useEffect(() => {

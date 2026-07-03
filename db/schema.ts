@@ -72,12 +72,12 @@ export const workoutTemplates = sqliteTable("workout_templates", {
     weightUnit: text("weight_unit").notNull().default("lbs"),
     createdAt: int("created_at", {mode: "timestamp"}).$defaultFn(() => new Date())
 })
-
 export const templateExercises = sqliteTable("template_exercises", {
     id: int("id").primaryKey({autoIncrement : true}),
     templateId: int("template_id").notNull().references(() => workoutTemplates.id),
     exerciseId: int("exercise_id").notNull().references(() => exercises.id),
-    orderNumber: int("order_number").notNull()
+    orderNumber: int("order_number").notNull(),
+    weightUnit: text("weight_unit").notNull().default("lbs")
 })
 
 

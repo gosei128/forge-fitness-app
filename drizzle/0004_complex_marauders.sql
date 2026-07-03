@@ -1,0 +1,1 @@
+ALTER TABLE `template_exercises` ADD `weight_unit` text DEFAULT 'lbs' NOT NULL;

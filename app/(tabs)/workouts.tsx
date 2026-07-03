@@ -20,6 +20,8 @@ import {
   Clock,
   Calendar,
   ChevronRight,
+  MoreVertical,
+  Plus,
 } from "lucide-react-native";
 import { router, useFocusEffect } from "expo-router";
 import Animated, {
@@ -27,6 +29,7 @@ import Animated, {
   useAnimatedStyle,
   withSpring,
   FadeInUp,
+  FadeOut,
 } from "react-native-reanimated";
 import { db } from "../../db";
 import {
@@ -40,6 +43,7 @@ import {
 import { eq, desc, inArray } from "drizzle-orm";
 import ExerciseBottomSheet from "../../components/ExerciseBottomSheet";
 import AnimatedButton from "../../components/AnimatedButton";
+import UnitDropdownMenu from "../../components/UnitDropdownMenu";
 import { useWorkoutSession } from "../../context/WorkoutSessionContext";
 
 interface Exercise {
@@ -49,22 +53,39 @@ interface Exercise {
   equipment: string | null;
   category: string | null;
   instructions: string | null;
+  weightUnit?: string;
 }
 
-const TEMPLATES = [
-  {
-    id: "push",
-    name: "Push Day",
-    exercises: [
-      "barbell bench press",
-      "dumbbell seated shoulder press",
-      "push-up",
-    ],
-    description: "Build chest, shoulders, and triceps strength",
-    restTime: 60,
-    weightUnit: "lbs",
-  },
-];
+// const TEMPLATES = [
+//   {
+//     id: "push",
+//     name: "Push Day",
+//     exercises: [
+//       "barbell bench press",
+//       "dumbbell seated shoulder press",
+//       "push-up",
+//     ],
+//     exerciseUnits: ["lbs", "lbs", "bodyweight"],
+//     description: "Build chest, shoulders, and triceps strength",
+//     restTime: 60,
+//   },
+//   {
+//     id: "pull",
+//     name: "Pull Day",
+//     exercises: ["pull-up", "barbell curl", "barbell deadlift"],
+//     exerciseUnits: ["bodyweight", "lbs", "lbs"],
+//     description: "Focus on upper back, lats, and bicep thickness",
+//     restTime: 90,
+//   },
+//   {
+//     id: "legs",
+//     name: "Leg Day",
+//     exercises: ["barbell full squat", "lever lying leg curl"],
+//     exerciseUnits: ["lbs", "lbs"],
+//     description: "Focus on quad power and hamstring development",
+//     restTime: 90,
+//   },
+// ];
 
 const capitalize = (str: string) => {
   if (!str) return "";
@@ -89,7 +110,7 @@ function formatDate(date: Date | null | number): string {
 const Workouts = () => {
   const insets = useSafeAreaInsets();
   const scale = useSharedValue(1);
-  const { isActive } = useWorkoutSession();
+  const { isActive, startSession } = useWorkoutSession();
 
   // Tab State
   const [activeTab, setActiveTab] = useState<
@@ -107,8 +128,21 @@ const Workouts = () => {
   const [customTitle, setCustomTitle] = useState("");
   const [customExercises, setCustomExercises] = useState<Exercise[]>([]);
   const [customRest, setCustomRest] = useState(60);
-  const [customUnit, setCustomUnit] = useState("lbs");
   const [isModalVisible, setIsModalVisible] = useState(false);
+  const [builderUnitDropdown, setBuilderUnitDropdown] = useState<{
+    exerciseId: number;
+    currentUnit: string;
+  } | null>(null);
+  const [templateMenuDropdown, setTemplateMenuDropdown] = useState<{
+    templateId: number;
+    templateName: string;
+    buttonX: number;
+    buttonY: number;
+  } | null>(null);
+  const menuOpacity = useSharedValue(0);
+  const menuScale = useSharedValue(0.8);
+  
+
 
   useEffect(() => {
     let tabIndex = 0;
@@ -116,10 +150,20 @@ const Workouts = () => {
     else if (activeTab === "history") tabIndex = 2;
 
     activeTabOffset.value = withSpring(tabIndex, {
-      damping: 150,
-      stiffness: 1200,
+      damping: 1500,
+      stiffness: 1500,
     });
   }, [activeTab]);
+
+  useEffect(() => {
+    if (templateMenuDropdown) {
+      menuOpacity.value = withSpring(1, { damping: 2000, stiffness: 2000 });
+      menuScale.value = withSpring(1, { damping: 2000, stiffness: 2000 });
+    } else {
+      menuOpacity.value = withSpring(0, { damping: 2000, stiffness: 2000 });
+      menuScale.value = withSpring(0.8, { damping: 2000, stiffness: 2000 });
+    }
+  }, [templateMenuDropdown]);
 
   const slidingPillStyle = useAnimatedStyle(() => {
     const padding = 6;
@@ -136,8 +180,20 @@ const Workouts = () => {
     };
   });
 
-  const handleOnPress = () => {
-    // Starts an empty active session
+  const menuAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: menuOpacity.value,
+      transform: [
+        {
+          scale: menuScale.value,
+        },
+      ],
+    };
+  });
+
+  const handleOnPress = async () => {
+    // Starts an empty active session and navigates
+    await startSession("");
     router.push("/(workouts)/active-session");
   };
 
@@ -157,7 +213,10 @@ const Workouts = () => {
       const templatesList = [];
       for (const temp of temps) {
         const tempExs = await db
-          .select({ name: exercises.name })
+          .select({
+            name: exercises.name,
+            weightUnit: templateExercises.weightUnit,
+          })
           .from(templateExercises)
           .innerJoin(exercises, eq(templateExercises.exerciseId, exercises.id))
           .where(eq(templateExercises.templateId, temp.id))
@@ -168,9 +227,9 @@ const Workouts = () => {
           dbId: temp.id,
           name: temp.name,
           exercises: tempExs.map((e) => e.name),
+          exerciseUnits: tempExs.map((e) => e.weightUnit),
           restTime: temp.restTime,
-          weightUnit: temp.weightUnit,
-          description: `Custom Template · ${temp.weightUnit.toUpperCase()} · ${temp.restTime}s rest`,
+          description: `Custom Template · ${temp.restTime}s rest`,
           isCustom: true,
         });
       }
@@ -239,7 +298,7 @@ const Workouts = () => {
     templateName: string,
     exerciseNames: string[],
     restTime: number = 60,
-    weightUnit: string = "lbs",
+    exerciseUnits?: string[],
   ) => {
     if (isActive) {
       Alert.alert(
@@ -258,7 +317,7 @@ const Workouts = () => {
 
     try {
       const results = await db
-        .select({ id: exercises.id })
+        .select({ id: exercises.id, name: exercises.name })
         .from(exercises)
         .where(inArray(exercises.name, exerciseNames));
 
@@ -267,16 +326,20 @@ const Workouts = () => {
         return;
       }
 
-      const ids = results.map((r) => r.id).join(",");
-      router.push({
-        pathname: "/(workouts)/active-session",
-        params: {
-          title: templateName,
-          exerciseIds: ids,
-          restTime: restTime.toString(),
-          weightUnit: weightUnit,
-        },
-      });
+      // Order IDs based on template exerciseNames sequence
+      const orderedIds = exerciseNames
+        .map(
+          (name) =>
+            results.find((r) => r.name.toLowerCase() === name.toLowerCase())
+              ?.id,
+        )
+        .filter((id): id is number => id !== undefined);
+
+      const ids = orderedIds.join(",");
+      const unitsList = exerciseUnits ? exerciseUnits.join(",") : "";
+
+      await startSession(templateName, ids, restTime, unitsList);
+      router.push("/(workouts)/active-session");
     } catch (e) {
       console.error("Error starting template:", e);
       Alert.alert("Error", "Could not start template session.");
@@ -291,11 +354,19 @@ const Workouts = () => {
       );
       return;
     }
-    setCustomExercises((prev) => [...prev, exercise]);
+    // Default weight unit per exercise to LBS
+    setCustomExercises((prev) => [...prev, { ...exercise, weightUnit: "lbs" }]);
   };
 
   const handleRemoveCustomExercise = (id: number) => {
     setCustomExercises((prev) => prev.filter((ex) => ex.id !== id));
+  };
+
+  const handleEditBuilderExerciseUnit = (
+    exerciseId: number,
+    currentUnit: string,
+  ) => {
+    setBuilderUnitDropdown({ exerciseId, currentUnit });
   };
 
   const handleSaveCustomTemplate = async () => {
@@ -321,7 +392,7 @@ const Workouts = () => {
             userId: userIdVal,
             name: customTitle.trim(),
             restTime: customRest,
-            weightUnit: customUnit,
+            weightUnit: "lbs", // legacy template-wide default, replaced by exercise-specific units
           })
           .returning({ id: workoutTemplates.id });
         templateIdVal = inserted[0].id;
@@ -330,7 +401,7 @@ const Workouts = () => {
           userId: userIdVal,
           name: customTitle.trim(),
           restTime: customRest,
-          weightUnit: customUnit,
+          weightUnit: "lbs",
         });
         const temps = await db
           .select()
@@ -346,6 +417,7 @@ const Workouts = () => {
           templateId: templateIdVal,
           exerciseId: customExercises[i].id,
           orderNumber: i + 1,
+          weightUnit: customExercises[i].weightUnit || "lbs",
         });
       }
 
@@ -357,7 +429,6 @@ const Workouts = () => {
       setCustomTitle("");
       setCustomExercises([]);
       setCustomRest(60);
-      setCustomUnit("lbs");
       setActiveTab("templates");
       loadTemplatesAndHistory();
     } catch (e) {
@@ -393,7 +464,18 @@ const Workouts = () => {
     );
   };
 
-  const allTemplates = [...TEMPLATES, ...customTemplates];
+  const handleEditTemplate = useCallback(
+    (templateId: number, templateName: string) => {
+      // TODO: Implement edit functionality
+      router.push({
+        pathname: "/(workouts)/edit-workout/[id]",
+        params: { id: templateId, name: templateName },
+      });
+    },
+    [router],
+  );
+
+  const allTemplates = [...customTemplates];
 
   return (
     <>
@@ -497,60 +579,79 @@ const Workouts = () => {
               className="pb-10"
             >
               {allTemplates.map((template) => (
-                <View
-                  key={template.id}
-                  className="bg-tertiary border border-neutral-900 rounded-3xl p-5 mb-4 relative"
-                >
-                  {/* Delete button for custom templates */}
-                  {template.isCustom && (
-                    <Pressable
-                      onPress={() => handleDeleteTemplate(template.dbId)}
-                      className="absolute top-5 right-5 p-1"
+            
+            
+                    <View
+                      key={template.id}
+                      className="bg-tertiary border border-neutral-900 rounded-3xl p-5 mb-4 relative"
                     >
-                      <Trash2 size={16} color="#ff4a4a" />
-                    </Pressable>
-                  )}
+                      {/* Menu button for custom templates */}
+                      {template.isCustom && (
+                        <View className="absolute top-5 right-5 z-20">
+                          <Pressable
+                            onPress={(e) => {
+                              const { pageX, pageY } = e.nativeEvent;
+                              setTemplateMenuDropdown({
+                                templateId: template.dbId,
+                                templateName: template.name,
+                                buttonX: pageX,
+                                buttonY: pageY,
+                              });
+                            }}
+                            className="p-2"
+                          >
+                            <MoreVertical size={16} color="#f3ff47" />
+                          </Pressable>
+                        </View>
+                      )}
 
-                  <Text className="text-white font-spaceBold text-xl mb-1">
-                    {template.name}
-                  </Text>
-                  <Text className="text-neutral-400 font-spaceRegular text-xs mb-4">
-                    {template.description}
-                  </Text>
+                      <Text className="text-white font-spaceBold text-xl mb-1">
+                        {template.name}
+                      </Text>
+                      <Text className="text-neutral-400 font-spaceRegular text-xs mb-4">
+                        {template.description}
+                      </Text>
 
-                  {/* Exercises List */}
-                  <View className="mb-4">
-                    {template.exercises.map((ex: string, idx: number) => (
-                      <View
-                        key={idx}
-                        className="flex-row items-center mb-2 ml-1"
-                      >
-                        <View className="w-1.5 h-1.5 rounded-full bg-secondary mr-3" />
-                        <Text className="text-neutral-300 font-spaceMedium text-sm capitalize">
-                          {ex}
-                        </Text>
+                      {/* Exercises List */}
+                      <View className="mb-4">
+                        {template.exercises.map((ex: string, idx: number) => (
+                          <View
+                            key={idx}
+                            className="flex-row items-center mb-2 ml-1"
+                          >
+                            <View className="w-1.5 h-1.5 rounded-full bg-secondary mr-3" />
+                            <Text className="text-neutral-300 font-spaceMedium text-sm capitalize">
+                              {ex}
+                            </Text>
+                          </View>
+                        ))}
                       </View>
-                    ))}
-                  </View>
 
-                  <Pressable
-                    style={{ elevation: 5 }}
-                    onPress={() =>
-                      handleStartTemplate(
-                        template.name,
-                        template.exercises,
-                        template.restTime,
-                        template.weightUnit,
-                      )
-                    }
-                    className="bg-secondary active:opacity-90 py-3.5 rounded-2xl items-center justify-center"
-                  >
-                    <Text className="text-tertiary font-spaceBold text-md">
-                      Start Session
-                    </Text>
-                  </Pressable>
-                </View>
+                      <Pressable
+                        style={{ elevation: 5 }}
+                        onPress={() =>
+                          handleStartTemplate(
+                            template.name,
+                            template.exercises,
+                            template.restTime,
+                            template.exerciseUnits,
+                          )
+                        }
+                        className="bg-secondary active:opacity-90 py-3.5 rounded-2xl items-center justify-center"
+                      >
+                        <Text className="text-tertiary font-spaceBold text-md">
+                          Start Session
+                        </Text>
+                      </Pressable>
+                    </View>
               ))}
+              <AnimatedButton
+                icon={<Plus size={16} color={"#131316"} strokeWidth={3} />}
+                title="Create Workout"
+                className=" bg-secondary/90 border border-secondary p-3 rounded-xl flex-row items-center justify-center gap-1"
+                textClassName="text-tertiary/100 font-spaceBold text-xl"
+                onPress={() => setActiveTab("custom")}
+              />
             </Animated.View>
           ) : activeTab === "custom" ? (
             /* Custom Template Builder */
@@ -605,34 +706,6 @@ const Workouts = () => {
                 ))}
               </View>
 
-              {/* Weight Unit Selection */}
-              <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase tracking-wider mb-2">
-                Weight Unit Option
-              </Text>
-              <View className="flex-row gap-2 mb-6">
-                {["lbs", "kg", "bodyweight"].map((unit) => (
-                  <Pressable
-                    key={unit}
-                    onPress={() => setCustomUnit(unit)}
-                    className={`flex-1 py-2 rounded-xl border items-center justify-center ${
-                      customUnit === unit
-                        ? "bg-secondary/15 border-secondary"
-                        : "bg-primary border-neutral-900"
-                    }`}
-                  >
-                    <Text
-                      className={`font-spaceBold text-xs uppercase ${
-                        customUnit === unit
-                          ? "text-secondary font-bold"
-                          : "text-neutral-400"
-                      }`}
-                    >
-                      {unit}
-                    </Text>
-                  </Pressable>
-                ))}
-              </View>
-
               <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase tracking-wider mb-2">
                 Exercises
               </Text>
@@ -654,16 +727,34 @@ const Workouts = () => {
                         <Text className="text-white font-spaceBold text-sm">
                           {ex.name}
                         </Text>
-                        <Text className="text-secondary font-spaceRegular text-[10px] capitalize mt-0.5">
-                          {ex.muscleGroup}
-                        </Text>
+                        <View className="flex-row items-center gap-1.5 mt-1">
+                          <Text className="text-secondary font-spaceRegular text-[10px] capitalize">
+                            {ex.muscleGroup}
+                          </Text>
+                          <Text className="text-neutral-550 font-spaceMedium text-[10px] uppercase">
+                            • {ex.weightUnit || "lbs"}
+                          </Text>
+                        </View>
                       </View>
-                      <Pressable
-                        onPress={() => handleRemoveCustomExercise(ex.id)}
-                        className="p-1"
-                      >
-                        <Trash2 size={16} color="#ff4a4a" />
-                      </Pressable>
+                      <View className="flex-row gap-1 items-center">
+                        <Pressable
+                          onPress={() =>
+                            handleEditBuilderExerciseUnit(
+                              ex.id,
+                              ex.weightUnit || "lbs",
+                            )
+                          }
+                          className="p-1.5 mr-1"
+                        >
+                          <MoreVertical size={16} color="#f3ff47" />
+                        </Pressable>
+                        <Pressable
+                          onPress={() => handleRemoveCustomExercise(ex.id)}
+                          className="p-1"
+                        >
+                          <Trash2 size={16} color="#ff4a4a" />
+                        </Pressable>
+                      </View>
                     </View>
                   ))}
                 </View>
@@ -777,6 +868,77 @@ const Workouts = () => {
         onClose={() => setIsModalVisible(false)}
         onSelectExercise={handleSelectExercise}
       />
+
+      {/* Unit Picker Dropdown for Builder */}
+      <UnitDropdownMenu
+        visible={builderUnitDropdown !== null}
+        currentUnit={builderUnitDropdown?.currentUnit ?? "lbs"}
+        onSelect={(unit) => {
+          if (builderUnitDropdown) {
+            setCustomExercises((prev) =>
+              prev.map((ex) =>
+                ex.id === builderUnitDropdown.exerciseId
+                  ? { ...ex, weightUnit: unit }
+                  : ex,
+              ),
+            );
+          }
+        }}
+        onClose={() => setBuilderUnitDropdown(null)}
+      />
+
+      {/* Template Menu Dropdown */}
+      {templateMenuDropdown && (
+        <Pressable
+       
+          onPress={() => setTemplateMenuDropdown(null)}
+          className="absolute border-none inset-0 z-50"
+        >
+          <Animated.View
+            style={[
+              menuAnimatedStyle,
+              {
+                position: "absolute",
+                top: templateMenuDropdown.buttonY + 10,
+                right: 20,
+                width: 160,
+              },
+              
+            ]}
+          >
+            <Pressable
+            style={{elevation: 20}}
+              onPress={(e) => e.stopPropagation()}
+              className="bg-tertiary border border-primary rounded-2xl overflow-hidden shadow-sm"
+            >
+              <Pressable
+                onPress={() =>
+                  handleEditTemplate(
+                    templateMenuDropdown.templateId,
+                    templateMenuDropdown.templateName,
+                  )
+                }
+                className="flex-row items-center px-4 py-3.5 border-b border-neutral-900 active:bg-neutral-800"
+              >
+                <Text className="text-white font-spaceMedium text-sm flex-1">
+                  Edit
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  handleDeleteTemplate(templateMenuDropdown.templateId);
+                  setTemplateMenuDropdown(null);
+                }}
+                className="flex-row items-center px-4 py-3.5 active:bg-neutral-800"
+              >
+                <Text className="text-red-400 font-spaceMedium text-sm flex-1">
+                  Delete
+                </Text>
+              </Pressable>
+            </Pressable>
+          </Animated.View>
+        </Pressable>
+      )}
     </>
   );
 };
