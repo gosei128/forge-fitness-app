@@ -141,8 +141,6 @@ const Workouts = () => {
   } | null>(null);
   const menuOpacity = useSharedValue(0);
   const menuScale = useSharedValue(0.8);
-  
-
 
   useEffect(() => {
     let tabIndex = 0;
@@ -579,77 +577,75 @@ const Workouts = () => {
               className="pb-10"
             >
               {allTemplates.map((template) => (
-            
-            
-                    <View
-                      key={template.id}
-                      className="bg-tertiary border border-neutral-900 rounded-3xl p-5 mb-4 relative"
-                    >
-                      {/* Menu button for custom templates */}
-                      {template.isCustom && (
-                        <View className="absolute top-5 right-5 z-20">
-                          <Pressable
-                            onPress={(e) => {
-                              const { pageX, pageY } = e.nativeEvent;
-                              setTemplateMenuDropdown({
-                                templateId: template.dbId,
-                                templateName: template.name,
-                                buttonX: pageX,
-                                buttonY: pageY,
-                              });
-                            }}
-                            className="p-2"
-                          >
-                            <MoreVertical size={16} color="#f3ff47" />
-                          </Pressable>
-                        </View>
-                      )}
-
-                      <Text className="text-white font-spaceBold text-xl mb-1">
-                        {template.name}
-                      </Text>
-                      <Text className="text-neutral-400 font-spaceRegular text-xs mb-4">
-                        {template.description}
-                      </Text>
-
-                      {/* Exercises List */}
-                      <View className="mb-4">
-                        {template.exercises.map((ex: string, idx: number) => (
-                          <View
-                            key={idx}
-                            className="flex-row items-center mb-2 ml-1"
-                          >
-                            <View className="w-1.5 h-1.5 rounded-full bg-secondary mr-3" />
-                            <Text className="text-neutral-300 font-spaceMedium text-sm capitalize">
-                              {ex}
-                            </Text>
-                          </View>
-                        ))}
-                      </View>
-
+                <View
+                  key={template.id}
+                  className="bg-tertiary border border-neutral-900 rounded-3xl p-5 mb-4 relative"
+                >
+                  {/* Menu button for custom templates */}
+                  {template.isCustom && (
+                    <View className="absolute top-5 right-5 z-20">
                       <Pressable
-                        style={{ elevation: 5 }}
-                        onPress={() =>
-                          handleStartTemplate(
-                            template.name,
-                            template.exercises,
-                            template.restTime,
-                            template.exerciseUnits,
-                          )
-                        }
-                        className="bg-secondary active:opacity-90 py-3.5 rounded-2xl items-center justify-center"
+                        onPress={(e) => {
+                          const { pageX, pageY } = e.nativeEvent;
+                          setTemplateMenuDropdown({
+                            templateId: template.dbId,
+                            templateName: template.name,
+                            buttonX: pageX,
+                            buttonY: pageY,
+                          });
+                        }}
+                        className="p-2"
                       >
-                        <Text className="text-tertiary font-spaceBold text-md">
-                          Start Session
-                        </Text>
+                        <MoreVertical size={16} color="#f3ff47" />
                       </Pressable>
                     </View>
+                  )}
+
+                  <Text className="text-white font-spaceBold text-xl mb-1">
+                    {template.name}
+                  </Text>
+                  <Text className="text-neutral-400 font-spaceRegular text-xs mb-4">
+                    {template.description}
+                  </Text>
+
+                  {/* Exercises List */}
+                  <View className="mb-4">
+                    {template.exercises.map((ex: string, idx: number) => (
+                      <View
+                        key={idx}
+                        className="flex-row items-center mb-2 ml-1"
+                      >
+                        <View className="w-1.5 h-1.5 rounded-full bg-secondary mr-3" />
+                        <Text className="text-neutral-300 font-spaceMedium text-sm capitalize">
+                          {ex}
+                        </Text>
+                      </View>
+                    ))}
+                  </View>
+
+                  <Pressable
+                    style={{ elevation: 5 }}
+                    onPress={() =>
+                      handleStartTemplate(
+                        template.name,
+                        template.exercises,
+                        template.restTime,
+                        template.exerciseUnits,
+                      )
+                    }
+                    className="bg-secondary active:opacity-90 py-3.5 rounded-2xl items-center justify-center"
+                  >
+                    <Text className="text-tertiary font-spaceBold text-md">
+                      Start Session
+                    </Text>
+                  </Pressable>
+                </View>
               ))}
               <AnimatedButton
-                icon={<Plus size={16} color={"#131316"} strokeWidth={3} />}
+                icon={<Plus size={16} color={"#f3ff47"} strokeWidth={3} />}
                 title="Create Workout"
-                className=" bg-secondary/90 border border-secondary p-3 rounded-xl flex-row items-center justify-center gap-1"
-                textClassName="text-tertiary/100 font-spaceBold text-xl"
+                className=" border-dashed border bg-secondary/10 border-secondary/40 p-3 rounded-xl flex-row items-center justify-center gap-1"
+                textClassName="text-secondary font-spaceBold text-xl"
                 onPress={() => setActiveTab("custom")}
               />
             </Animated.View>
@@ -890,7 +886,6 @@ const Workouts = () => {
       {/* Template Menu Dropdown */}
       {templateMenuDropdown && (
         <Pressable
-       
           onPress={() => setTemplateMenuDropdown(null)}
           className="absolute border-none inset-0 z-50"
         >
@@ -903,11 +898,10 @@ const Workouts = () => {
                 right: 20,
                 width: 160,
               },
-              
             ]}
           >
             <Pressable
-            style={{elevation: 20}}
+              style={{ elevation: 20 }}
               onPress={(e) => e.stopPropagation()}
               className="bg-tertiary border border-primary rounded-2xl overflow-hidden shadow-sm"
             >

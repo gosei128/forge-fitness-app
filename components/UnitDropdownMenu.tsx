@@ -1,6 +1,11 @@
 import React from "react";
 import { View, Text, Pressable, Modal, TouchableOpacity } from "react-native";
-import Animated, { FadeIn, FadeOut } from "react-native-reanimated";
+import Animated, {
+  FadeIn,
+  FadeOut,
+  ZoomIn,
+  ZoomOut,
+} from "react-native-reanimated";
 
 const UNITS = [
   { label: "LBS", value: "lbs", desc: "Pounds" },
@@ -31,53 +36,44 @@ export default function UnitDropdownMenu({
       statusBarTranslucent
       onRequestClose={onClose}
     >
-      {/* Full-screen backdrop — tap to dismiss */}
       <TouchableOpacity
         activeOpacity={1}
         onPress={onClose}
         style={{
           flex: 1,
-          backgroundColor: "rgba(0,0,0,0.55)",
+          backgroundColor: "rgba(0, 0, 0, 0.7)",
           justifyContent: "center",
           alignItems: "center",
+          paddingHorizontal: 20,
         }}
       >
-        {/* Card — stops tap propagation so it doesn't dismiss itself */}
         <TouchableOpacity activeOpacity={1}>
           <Animated.View
-            entering={FadeIn.duration(150)}
-            exiting={FadeOut.duration(100)}
+            entering={ZoomIn.duration(180).springify()}
+            exiting={FadeOut.duration(120).withCallback(() => undefined)}
             style={{
-              backgroundColor: "#1c1c1f",
-              borderRadius: 20,
+              backgroundColor: "#171719",
+              borderRadius: 24,
               borderWidth: 1,
               borderColor: "#2a2a2d",
-              paddingVertical: 6,
-              paddingHorizontal: 0,
-              width: 230,
+              paddingVertical: 16,
+              paddingHorizontal: 14,
+              width: 280,
               shadowColor: "#000",
-              shadowOffset: { width: 0, height: 10 },
-              shadowOpacity: 0.6,
-              shadowRadius: 20,
-              elevation: 20,
+              shadowOffset: { width: 0, height: 14 },
+              shadowOpacity: 0.45,
+              shadowRadius: 18,
+              elevation: 24,
             }}
           >
             {/* Header */}
-            <View
-              style={{
-                paddingHorizontal: 16,
-                paddingTop: 10,
-                paddingBottom: 10,
-                borderBottomWidth: 1,
-                borderBottomColor: "#2a2a2d",
-              }}
-            >
+            <View style={{ marginBottom: 10, paddingHorizontal: 4 }}>
               <Text
                 style={{
-                  color: "#666",
-                  fontSize: 10,
+                  color: "#a1a1a5",
+                  fontSize: 11,
                   fontFamily: "SpaceGrotesk-Bold",
-                  letterSpacing: 1.5,
+                  letterSpacing: 1.3,
                   textTransform: "uppercase",
                 }}
               >
@@ -85,8 +81,7 @@ export default function UnitDropdownMenu({
               </Text>
             </View>
 
-            {/* Options */}
-            <View style={{ paddingVertical: 4 }}>
+            <View style={{ gap: 8 }}>
               {UNITS.map((unit) => {
                 const isSelected = currentUnit === unit.value;
                 return (
@@ -100,23 +95,21 @@ export default function UnitDropdownMenu({
                       flexDirection: "row",
                       alignItems: "center",
                       paddingHorizontal: 12,
-                      paddingVertical: 11,
-                      marginHorizontal: 6,
-                      marginVertical: 2,
+                      paddingVertical: 12,
                       borderRadius: 14,
                       backgroundColor: pressed
-                        ? "#252528"
+                        ? "#232327"
                         : isSelected
-                          ? "rgba(243,255,71,0.08)"
+                          ? "rgba(243, 255, 71, 0.1)"
                           : "transparent",
                     })}
                   >
                     {/* Badge */}
                     <View
                       style={{
-                        width: 38,
-                        height: 26,
-                        borderRadius: 8,
+                        width: 44,
+                        height: 30,
+                        borderRadius: 9,
                         alignItems: "center",
                         justifyContent: "center",
                         backgroundColor: isSelected ? "#f3ff47" : "#252528",
@@ -125,9 +118,9 @@ export default function UnitDropdownMenu({
                     >
                       <Text
                         style={{
-                          fontSize: 10,
+                          fontSize: 11,
                           fontFamily: "SpaceGrotesk-Bold",
-                          color: isSelected ? "#000" : "#777",
+                          color: isSelected ? "#000" : "#a1a1a5",
                         }}
                       >
                         {unit.label}
@@ -142,57 +135,34 @@ export default function UnitDropdownMenu({
                         fontFamily: isSelected
                           ? "SpaceGrotesk-Bold"
                           : "SpaceGrotesk-Regular",
-                        color: isSelected ? "#fff" : "#999",
+                        color: isSelected ? "#ffffff" : "#bcbcbf",
                       }}
                     >
                       {unit.desc}
                     </Text>
 
-                    {/* Checkmark dot */}
-                    {isSelected && (
-                      <View
-                        style={{
-                          width: 18,
-                          height: 18,
-                          borderRadius: 9,
-                          backgroundColor: "#f3ff47",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
-                        <Text
-                          style={{
-                            fontSize: 10,
-                            color: "#000",
-                            fontFamily: "SpaceGrotesk-Bold",
-                          }}
-                        >
-                          ✓
-                        </Text>
-                      </View>
-                    )}
+                    {/* Checkmark Dot */}
                   </Pressable>
                 );
               })}
             </View>
 
-            {/* Cancel */}
+            {/* Cancel Button */}
             <View
               style={{
+                marginTop: 10,
                 borderTopWidth: 1,
-                borderTopColor: "#2a2a2d",
-                paddingTop: 4,
-                paddingBottom: 4,
+                borderColor: "#2a2a2d",
+                paddingTop: 8,
               }}
             >
               <Pressable
                 onPress={onClose}
                 style={({ pressed }) => ({
-                  paddingHorizontal: 12,
-                  paddingVertical: 11,
-                  marginHorizontal: 6,
-                  borderRadius: 14,
+                  paddingVertical: 10,
+                  borderRadius: 12,
                   alignItems: "center",
+                  justifyContent: "center",
                   backgroundColor: pressed ? "#252528" : "transparent",
                 })}
               >
@@ -200,7 +170,7 @@ export default function UnitDropdownMenu({
                   style={{
                     fontSize: 14,
                     fontFamily: "SpaceGrotesk-Medium",
-                    color: "#555",
+                    color: "#8f8f95",
                   }}
                 >
                   Cancel
