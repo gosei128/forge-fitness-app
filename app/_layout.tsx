@@ -8,9 +8,10 @@ import "../global.css";
 import { exercises, user } from "../db/schema";
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
-import { seedExercises } from "../db/seed";
+import { seedExercises, seedRanks } from "../db/seed";
 import Onboarding from "../components/Onboarding";
 import { useState } from "react";
+import { generateMissions } from "../lib/missionEngine";
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -23,6 +24,12 @@ const RootLayout = () => {
     db,
     migration,
   );
+
+  useEffect(() => {
+    if (migrationsError) {
+      console.error("Drizzle Migration Error:", migrationsError);
+    }
+  }, [migrationsError]);
 
   const [hasUser, setHasUser] = useState<boolean | null>(null);
 
@@ -38,14 +45,20 @@ const RootLayout = () => {
     let isMounted = true;
 
     if (migrationsSuccess) {
-      seedExercises()
+      Promise.all([seedExercises(), seedRanks()])
         .then(() => {
           console.log("Database seeded successfully");
           return db.select().from(user).limit(1);
         })
-        .then((users) => {
+        .then(async (users) => {
           if (isMounted) {
-            setHasUser(users.length > 0);
+            const exists = users.length > 0;
+            setHasUser(exists);
+            if (exists) {
+              await generateMissions(users[0].id).catch((err) => {
+                console.error("Missions generation on boot failed:", err);
+              });
+            }
           }
         })
         .catch((err) => {

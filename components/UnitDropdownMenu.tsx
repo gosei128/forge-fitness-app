@@ -49,7 +49,7 @@ export default function UnitDropdownMenu({
       >
         <TouchableOpacity activeOpacity={1}>
           <Animated.View
-            entering={ZoomIn.duration(180).springify()}
+            entering={ZoomIn.duration(10).springify()}
             exiting={FadeOut.duration(120).withCallback(() => undefined)}
             style={{
               backgroundColor: "#171719",

@@ -54,6 +54,7 @@ export default function Profile() {
     totalXp: number;
     currentStreak: number;
     longestStreak: number;
+    currentRank: string;
   } | null>(null);
   const [sessionsCount, setSessionsCount] = useState(0);
   const [prList, setPrList] = useState<PRItem[]>([]);
@@ -88,6 +89,7 @@ export default function Profile() {
                 totalXp: 0,
                 currentStreak: 0,
                 longestStreak: 0,
+                currentRank: "Newbie",
               });
             }
 
@@ -138,6 +140,7 @@ export default function Profile() {
   const level = stats?.currentLevel ?? 1;
   const streak = stats?.currentStreak ?? 0;
   const totalXp = stats?.totalXp ?? 0;
+  const rank = stats?.currentRank ?? "Newbie";
 
   if (loading) {
     return (
@@ -164,7 +167,7 @@ export default function Profile() {
             </Text>
           </View>
           <Text className="text-white font-spaceBold text-2xl mt-3">{userName}</Text>
-          <Text className="text-secondary font-spaceBold text-xs mt-1">Goal — Batman Build</Text>
+          <Text className="text-secondary font-spaceBold text-xs mt-1">{rank} • Goal — Batman Build</Text>
         </Animated.View>
 
         {/* Stats Row Cards */}

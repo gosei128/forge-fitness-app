@@ -1,6 +1,33 @@
 import { db } from "../db";
-import { userStats } from "../db/schema";
-import { eq } from "drizzle-orm";
+import { userStats, ranks } from "../db/schema";
+import { eq, and, lte, gte } from "drizzle-orm";
+
+/**
+ * Helper to query user rank based on XP.
+ * Falls back to local logic if DB is not populated.
+ */
+export async function getRankForXp(xp: number): Promise<string> {
+  try {
+    const rankRows = await db
+      .select()
+      .from(ranks)
+      .where(and(lte(ranks.minXp, xp), gte(ranks.maxXp, xp)))
+      .limit(1);
+    if (rankRows.length > 0) {
+      return rankRows[0].name;
+    }
+  } catch (err) {
+    console.error("Failed to query rank from database:", err);
+  }
+
+  // Local fallback
+  if (xp < 2500) return "Newbie";
+  if (xp < 5000) return "Gym Rat";
+  if (xp < 7500) return "Iron Discipline";
+  if (xp < 10000) return "Absolute Unit";
+  if (xp < 12500) return "Demigod";
+  return "Greek God";
+}
 
 /**
  * Calculates level from total cumulative XP.
@@ -62,11 +89,13 @@ export async function applyXP(
       // First session ever
       const newXp = xpEarned;
       const newLevel = calculateLevel(newXp);
+      const newRank = await getRankForXp(newXp);
       
       await db.insert(userStats).values({
         userId,
         totalXp: newXp,
         currentLevel: newLevel,
+        currentRank: newRank,
         currentStreak: 1,
         longestStreak: 1,
         lastWorkoutAt: now,
@@ -101,11 +130,14 @@ export async function applyXP(
 
     const newLongestStreak = Math.max(existing.longestStreak, newStreak);
 
+    const newRank = await getRankForXp(newXp);
+
     await db
       .update(userStats)
       .set({
         totalXp: newXp,
         currentLevel: newLevel,
+        currentRank: newRank,
         currentStreak: newStreak,
         longestStreak: newLongestStreak,
         lastWorkoutAt: now,

@@ -30,6 +30,12 @@ const TabLayout = () => {
         }}
       />
       <Tabs.Screen
+        name="missions"
+        options={{
+          title: "Missions",
+        }}
+      />
+      <Tabs.Screen
         name="profile"
         options={{
           title: "Profile",

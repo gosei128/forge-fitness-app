@@ -9,8 +9,15 @@ import {
   TextInput,
   View,
 } from "react-native";
+import Animated, {
+  SlideOutDown,
+  FadeIn,
+  FadeOut,
+  Layout,
+  SlideInDown,
+} from "react-native-reanimated";
 import React, { useCallback, useEffect, useState } from "react";
-import { router, useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams, useFocusEffect } from "expo-router";
 import {
   Clock3,
   Dumbbell,
@@ -24,7 +31,7 @@ import Header from "../../../components/Header";
 import ExerciseBottomSheet from "../../../components/ExerciseBottomSheet";
 import UnitDropdownMenu from "../../../components/UnitDropdownMenu";
 import { db } from "../../../db";
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import {
   exercises,
   templateExercises,
@@ -75,28 +82,17 @@ export default function EditTemplate() {
     currentUnit: string;
   } | null>(null);
 
-  const ensureTemplateColumns = useCallback(async () => {
-    try {
-      await db.run(
-        sql`ALTER TABLE template_exercises ADD COLUMN rest_time integer NOT NULL DEFAULT 60`,
-      );
-    } catch (error) {
-      console.log("Template rest column check:", error);
-    }
-
-    try {
-      await db.run(
-        sql`ALTER TABLE template_exercises ADD COLUMN default_sets text`,
-      );
-    } catch (error) {
-      console.log("Template default sets column check:", error);
-    }
-  }, []);
+  // Close dropdown when navigating away
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setUnitDropdown(null);
+      };
+    }, []),
+  );
 
   const loadTemplate = useCallback(async () => {
     try {
-      await ensureTemplateColumns();
-
       const templateRows = await db
         .select()
         .from(workoutTemplates)
@@ -171,7 +167,7 @@ export default function EditTemplate() {
     } finally {
       setLoading(false);
     }
-  }, [ensureTemplateColumns, id, name]);
+  }, [id, name]);
 
   useEffect(() => {
     setLoading(true);
@@ -274,8 +270,6 @@ export default function EditTemplate() {
     setSaving(true);
 
     try {
-      await ensureTemplateColumns();
-
       await db
         .update(workoutTemplates)
         .set({
@@ -444,8 +438,11 @@ export default function EditTemplate() {
                 </View>
 
                 {exercise.sets.map((set, index) => (
-                  <View
+                  <Animated.View
                     key={set.id}
+                    entering={FadeIn.duration(140)}
+                    exiting={FadeOut.duration(120)}
+                    layout={Layout.springify()}
                     className="flex-row items-center mb-2 px-1"
                   >
                     <View className="w-[40px] items-center">
@@ -486,7 +483,7 @@ export default function EditTemplate() {
                         />
                       </Pressable>
                     </View>
-                  </View>
+                  </Animated.View>
                 ))}
 
                 <Pressable

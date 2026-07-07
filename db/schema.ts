@@ -92,6 +92,7 @@ export const userStats = sqliteTable("user_stats", {
     .references(() => user.id),
   totalXp: int("total_xp").notNull().default(0),
   currentLevel: int("current_level").notNull().default(1),
+  currentRank: text("current_rank").notNull().default("Newbie"),
   currentStreak: int("current_streak").notNull().default(0),
   longestStreak: int("longest_streak").notNull().default(0),
   lastWorkoutAt: int("last_workout_at", { mode: "timestamp" }),
@@ -123,7 +124,36 @@ export const templateExercises = sqliteTable("template_exercises", {
   defaultSets: text("default_sets"),
 });
 
+export const missions = sqliteTable("missions", {
+  id: int("id").primaryKey({ autoIncrement: true }),
+  userId: int("user_id")
+    .notNull()
+    .references(() => user.id),
+  type: text("type").notNull(), // 'sessions_this_week' | 'hit_a_pr' | 'muscle_group'
+  title: text("title").notNull(),
+  description: text("description").notNull(),
+  targetValue: int("target_value").notNull().default(1),
+  currentValue: int("current_value").notNull().default(0),
+  muscleGroup: text("muscle_group"), // only used for 'muscle_group' type
+  status: text("status").notNull().default("active"), // 'active' | 'completed' | 'expired'
+  xpReward: int("xp_reward").notNull().default(100),
+  expiresAt: int("expires_at", { mode: "timestamp" }),
+  completedAt: int("completed_at", { mode: "timestamp" }),
+  createdAt: int("created_at", { mode: "timestamp" }).$defaultFn(
+    () => new Date(),
+  ),
+});
+
+export const ranks = sqliteTable("ranks", {
+  id: int("id").primaryKey({ autoIncrement: true }),
+  name: text("name").notNull(),
+  minXp: int("min_xp").notNull().default(0),
+  maxXp: int("max_xp").notNull().default(0),
+  level: int("level").notNull().default(1),
+})
+
 // Relations
+
 
 export const userRelations = relations(user, ({ many }) => ({
   sessions: many(workoutSessions),
@@ -203,3 +233,10 @@ export const templateExercisesRelations = relations(
     }),
   }),
 );
+
+export const missionsRelations = relations(missions, ({ one }) => ({
+  user: one(user, {
+    fields: [missions.userId],
+    references: [user.id],
+  }),
+}));

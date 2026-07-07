@@ -138,6 +138,9 @@ export function CustomTabBar({
         } else if (route.name === "exercises") {
           iconName = isFocused ? "arm-flex" : "arm-flex-outline";
           IconComponent = MaterialCommunityIcons;
+        } else if (route.name === "missions") {
+          iconName = "sword";
+          IconComponent = MaterialCommunityIcons;
         } else if (route.name === "profile") {
           iconName = isFocused ? "person" : "person-outline";
           IconComponent = Ionicons;
@@ -154,9 +157,11 @@ export function CustomTabBar({
               ? "Workouts"
               : route.name === "exercises"
                 ? "Exercises"
-                : route.name === "profile"
-                  ? "Profile"
-                  : String(label);
+                : route.name === "missions"
+                  ? "Missions"
+                  : route.name === "profile"
+                    ? "Profile"
+                    : String(label);
 
         return (
           <TabButton

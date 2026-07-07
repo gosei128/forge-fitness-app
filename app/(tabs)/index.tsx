@@ -105,21 +105,13 @@ function AnimatedLevelNumber({ level }: { level: number }) {
 /**
  * Helper to get user's title based on level
  */
-function getLevelTitle(level: number): string {
-  if (level < 3) return "Iron Discipline";
-  if (level < 6) return "Bronze Challenger";
-  if (level < 10) return "Silver Gladiator";
-  if (level < 15) return "Gold Elite";
-  if (level < 20) return "Platinum Master";
-  return "Diamond Legend";
-}
-
 export default function Index() {
   const [stats, setStats] = useState<{
     currentLevel: number;
     totalXp: number;
     currentStreak: number;
     longestStreak: number;
+    currentRank: string;
   } | null>(null);
 
   // Fetch the actual stats when page is focused
@@ -145,6 +137,7 @@ export default function Index() {
                 totalXp: 0,
                 currentStreak: 0,
                 longestStreak: 0,
+                currentRank: "Newbie",
               });
             }
           } else if (isMounted) {
@@ -153,6 +146,7 @@ export default function Index() {
               totalXp: 0,
               currentStreak: 0,
               longestStreak: 0,
+              currentRank: "Newbie",
             });
           }
         } catch (e) {
@@ -169,6 +163,7 @@ export default function Index() {
   const level = stats?.currentLevel ?? 1;
   const totalXp = stats?.totalXp ?? 0;
   const streak = stats?.currentStreak ?? 0;
+  const rank = stats?.currentRank ?? "Newbie";
 
   // Level XP range math:
   // Level L range starts at minXp and goes to maxXp (which is start of L+1)
@@ -219,7 +214,7 @@ export default function Index() {
               <View className="flex-row items-center justify-start gap-1.5 mt-2">
                 <Trophy size={14} color="#f3ff47" />
                 <Text className="font-spaceBold text-secondary text-sm">
-                  {getLevelTitle(level)}
+                  {rank}
                 </Text>
               </View>
             </View>
