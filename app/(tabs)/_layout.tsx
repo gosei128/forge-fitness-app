@@ -17,12 +17,7 @@ const TabLayout = () => {
           title: "Workouts",
         }}
       />
-      <Tabs.Screen
-        name="workouts"
-        options={{
-          title: "Workouts",
-        }}
-      />
+
       <Tabs.Screen
         name="exercises"
         options={{
@@ -39,6 +34,12 @@ const TabLayout = () => {
         name="profile"
         options={{
           title: "Profile",
+        }}
+      />
+      <Tabs.Screen
+        name="workouts"
+        options={{
+          title: "Workouts",
         }}
       />
     </Tabs>
