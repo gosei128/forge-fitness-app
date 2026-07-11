@@ -275,6 +275,18 @@ export default function Index() {
           <AnimatedProgressBar progress={progress} />
         </View>
 
+        {/* Temporary Onboarding Test Button */}
+        <Spacer height={16} />
+        <Pressable
+          onPress={() => router.push("/onboarding" as any)}
+          className="bg-neutral-900 border border-amber-500/20 py-3.5 rounded-2xl flex-row justify-center items-center gap-2"
+        >
+          <Trophy size={14} color="#f59e0b" />
+          <Text className="font-spaceBold text-amber-500 text-xs tracking-wider uppercase">
+            Test Onboarding Flow
+          </Text>
+        </Pressable>
+
         {/* Active Missions */}
         <Spacer height={24} />
         <View className="flex-row justify-between items-center px-1">

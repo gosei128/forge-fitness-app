@@ -1,6 +1,7 @@
 [
   {
     "id": "nightwing",
+    "characterImage": "character-achetypes/nightwing.png",
     "character": "Nightwing",
     "archetype": "Acrobatic Athlete",
     "description": "Dick Grayson — former circus acrobat turned elite vigilante. The Nightwing build is not about being the biggest or the strongest. It is about being the most capable body in the room. Lean, explosive, impossibly agile, with the endurance to fight all night.",
@@ -155,6 +156,7 @@
   },
   {
     "id": "toji",
+    "characterImage": "character-achetypes/toji.png",
     "character": "Toji Fushiguro",
     "archetype": "Peak Human Condition",
     "description": "Toji Fushiguro has zero cursed energy — his strength is entirely physical. In a world of supernatural fighters, he became the most dangerous man alive through his body alone. This is the closest thing to a perfect human physique that exists in fiction — and it is actually achievable.",
@@ -330,6 +332,7 @@
   },
   {
     "id": "batman",
+    "characterImage": "character-achetypes/batman.png",
     "character": "Batman",
     "archetype": "Lean Functional Strength",
     "description": "Bruce Wayne trains to be the perfect human weapon. Not the biggest. Not the fastest. The most complete. The Batman build is functional strength meets leanness meets endurance — a body that can do everything at a high level.",

@@ -5,15 +5,108 @@ import {
   ScrollView,
   Pressable,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { useLocalSearchParams, router } from "expo-router";
-import { ChevronLeft, ChevronDown, ChevronUp, Trophy, Target, Dumbbell } from "lucide-react-native";
+import {
+  ChevronLeft,
+  ChevronDown,
+  ChevronUp,
+  Trophy,
+  Target,
+  Dumbbell,
+} from "lucide-react-native";
 import { db } from "../../db";
 import { user, userStats } from "../../db/schema";
 import { eq } from "drizzle-orm";
 import { getArchetype, selectArchetype } from "../../lib/archetypes";
 import Spacer from "../../components/Spacer";
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+} from "react-native-reanimated";
+
+// ─── Accordion Card component ────────────────────────────────
+function AccordionCard({
+  title,
+  content,
+  isExpanded,
+  onPress,
+  isLast = false,
+}: {
+  title: string;
+  content: string;
+  isExpanded: boolean;
+  onPress: () => void;
+  isLast?: boolean;
+}) {
+  const [contentHeight, setContentHeight] = useState(0);
+  const heightVal = useSharedValue(0);
+
+  useEffect(() => {
+    if (contentHeight > 0) {
+      heightVal.value = withTiming(isExpanded ? contentHeight : 0, {
+        duration: 250,
+      });
+    }
+  }, [isExpanded, contentHeight]);
+
+  const animatedStyle = useAnimatedStyle(() => {
+    const opacity = contentHeight > 0 ? heightVal.value / contentHeight : 0;
+    return {
+      height: heightVal.value,
+      opacity: opacity,
+    };
+  });
+
+  return (
+    <Pressable
+      onPress={onPress}
+      className={`bg-[#1a1a1e] border border-neutral-900 p-4 rounded-2xl ${isLast ? "mb-6" : "mb-3"}`}
+    >
+      <View className="flex-row justify-between items-center">
+        <Text className="text-white font-spaceBold text-sm">{title}</Text>
+        {isExpanded ? (
+          <ChevronUp color="#999" size={16} />
+        ) : (
+          <ChevronDown color="#999" size={16} />
+        )}
+      </View>
+
+      {/* Hidden layout measurement container (absolute, off-screen horizontal bounds) */}
+      <View
+        pointerEvents="none"
+        style={{
+          position: "absolute",
+          opacity: 0,
+          left: 16,
+          right: 16,
+          top: 0,
+        }}
+        onLayout={(e) => {
+          setContentHeight(e.nativeEvent.layout.height);
+        }}
+      >
+        <View className="mt-3 border-t border-neutral-900/60 pt-3">
+          <Text className="text-neutral-400 font-spaceRegular text-xs leading-relaxed">
+            {content}
+          </Text>
+        </View>
+      </View>
+
+      {/* Animated container */}
+      <Animated.View style={[{ overflow: "hidden" }, animatedStyle]}>
+        <View className="mt-3 border-t border-neutral-900/60 pt-3">
+          <Text className="text-neutral-400 font-spaceRegular text-xs leading-relaxed">
+            {content}
+          </Text>
+        </View>
+      </Animated.View>
+    </Pressable>
+  );
+}
 
 export default function CharacterDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -46,13 +139,29 @@ export default function CharacterDetail() {
   const getDifficultyColor = (diff: string) => {
     switch (diff.toLowerCase()) {
       case "beginner":
-        return { text: "text-green-400", bg: "bg-green-400/10", border: "border-green-400/20" };
+        return {
+          text: "text-green-400",
+          bg: "bg-green-400/10",
+          border: "border-green-400/20",
+        };
       case "intermediate":
-        return { text: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20" };
+        return {
+          text: "text-amber-400",
+          bg: "bg-amber-400/10",
+          border: "border-amber-400/20",
+        };
       case "advanced":
-        return { text: "text-red-400", bg: "bg-red-400/10", border: "border-red-400/20" };
+        return {
+          text: "text-red-400",
+          bg: "bg-red-400/10",
+          border: "border-red-400/20",
+        };
       default:
-        return { text: "text-neutral-400", bg: "bg-neutral-400/10", border: "border-neutral-400/20" };
+        return {
+          text: "text-neutral-400",
+          bg: "bg-neutral-400/10",
+          border: "border-neutral-400/20",
+        };
     }
   };
 
@@ -109,8 +218,12 @@ export default function CharacterDetail() {
             <Text className="text-neutral-400 font-spaceMedium text-sm">
               {item.archetype}
             </Text>
-            <View className={`px-2 py-0.5 rounded-full border ${diffColors.bg} ${diffColors.border}`}>
-              <Text className={`font-spaceBold text-[9px] uppercase tracking-wider ${diffColors.text}`}>
+            <View
+              className={`px-2 py-0.5 rounded-full border ${diffColors.bg} ${diffColors.border}`}
+            >
+              <Text
+                className={`font-spaceBold text-[9px] uppercase tracking-wider ${diffColors.text}`}
+              >
                 {item.difficulty}
               </Text>
             </View>
@@ -121,12 +234,13 @@ export default function CharacterDetail() {
         </View>
 
         {/* Coach Card */}
-        <View className="bg-[#1a1a1e] border border-neutral-900 p-5 rounded-3xl mb-6 flex-row gap-4 items-center">
-          <View className="w-12 h-12 rounded-2xl bg-[#fba613]/10 border border-[#fba613]/25 justify-center items-center">
-            <Text className="text-[#fba613] font-spaceBold text-xl">S</Text>
-          </View>
+        <View className="bg-tertiary/50 border border-neutral-900 p-5 rounded-3xl mb-6 flex-row gap-4 items-center">
+          <Image
+            source={require("../../assets/images/coach-head.png")}
+            style={{ width: 60, height: 70, borderRadius: 100 }}
+          />
           <View className="flex-1">
-            <Text className="text-[#fba613] font-spaceBold text-xs uppercase tracking-wider mb-1">
+            <Text className="text-secondary font-spaceBold text-xs uppercase tracking-wider mb-1">
               Coach says
             </Text>
             <Text className="text-white font-spaceRegular text-xs leading-relaxed italic">
@@ -136,7 +250,9 @@ export default function CharacterDetail() {
         </View>
 
         {/* Targets Section */}
-        <Text className="text-white font-spaceBold text-lg mb-3">Target Metrics</Text>
+        <Text className="text-white font-spaceBold text-lg mb-3">
+          Target Metrics
+        </Text>
         <View className="flex-row justify-between gap-3 mb-6">
           <View className="flex-1 bg-neutral-900 border border-neutral-850 p-4 rounded-2xl items-center justify-center">
             <Target color="#fba613" size={16} className="mb-2" />
@@ -161,91 +277,55 @@ export default function CharacterDetail() {
             <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">
               Primary Focus
             </Text>
-            <Text className="text-white font-spaceBold text-[10px] text-center" numberOfLines={2}>
+            <Text
+              className="text-white font-spaceBold text-[10px] text-center"
+              numberOfLines={2}
+            >
               {item.targets.focus}
             </Text>
           </View>
         </View>
 
         {/* Body Type Discussion Section */}
-        <Text className="text-white font-spaceBold text-lg mb-3">Program Discussion</Text>
-        
-        {/* Card 1: What to expect */}
-        <Pressable
+        <Text className="text-white font-spaceBold text-lg mb-3">
+          Program Discussion
+        </Text>
+
+        {/* Program Discussion Accordions */}
+        <AccordionCard
+          title="What to expect"
+          content={item.bodyTypeDiscussion.expectations}
+          isExpanded={expandedSection === "expect"}
           onPress={() => toggleSection("expect")}
-          className="bg-[#1a1a1e] border border-neutral-900 p-4 rounded-2xl mb-3"
-        >
-          <View className="flex-row justify-between items-center">
-            <Text className="text-white font-spaceBold text-sm">What to expect</Text>
-            {expandedSection === "expect" ? (
-              <ChevronUp color="#999" size={16} />
-            ) : (
-              <ChevronDown color="#999" size={16} />
-            )}
-          </View>
-          {expandedSection === "expect" && (
-            <View className="mt-3 border-t border-neutral-900/60 pt-3">
-              <Text className="text-neutral-400 font-spaceRegular text-xs leading-relaxed">
-                {item.bodyTypeDiscussion.expectations}
-              </Text>
-            </View>
-          )}
-        </Pressable>
+        />
 
-        {/* Card 2: Timeline */}
-        <Pressable
+        <AccordionCard
+          title="Timeline"
+          content={item.bodyTypeDiscussion.timeline}
+          isExpanded={expandedSection === "timeline"}
           onPress={() => toggleSection("timeline")}
-          className="bg-[#1a1a1e] border border-neutral-900 p-4 rounded-2xl mb-3"
-        >
-          <View className="flex-row justify-between items-center">
-            <Text className="text-white font-spaceBold text-sm">Timeline</Text>
-            {expandedSection === "timeline" ? (
-              <ChevronUp color="#999" size={16} />
-            ) : (
-              <ChevronDown color="#999" size={16} />
-            )}
-          </View>
-          {expandedSection === "timeline" && (
-            <View className="mt-3 border-t border-neutral-900/60 pt-3">
-              <Text className="text-neutral-400 font-spaceRegular text-xs leading-relaxed">
-                {item.bodyTypeDiscussion.timeline}
-              </Text>
-            </View>
-          )}
-        </Pressable>
+        />
 
-        {/* Card 3: Coach note */}
-        <Pressable
+        <AccordionCard
+          title="Coach note"
+          content={item.bodyTypeDiscussion.coachNote}
+          isExpanded={expandedSection === "coachNote"}
           onPress={() => toggleSection("coachNote")}
-          className="bg-[#1a1a1e] border border-neutral-900 p-4 rounded-2xl mb-6"
-        >
-          <View className="flex-row justify-between items-center">
-            <Text className="text-white font-spaceBold text-sm">Coach note</Text>
-            {expandedSection === "coachNote" ? (
-              <ChevronUp color="#999" size={16} />
-            ) : (
-              <ChevronDown color="#999" size={16} />
-            )}
-          </View>
-          {expandedSection === "coachNote" && (
-            <View className="mt-3 border-t border-neutral-900/60 pt-3">
-              <Text className="text-neutral-400 font-spaceRegular text-xs leading-relaxed">
-                {item.bodyTypeDiscussion.coachNote}
-              </Text>
-            </View>
-          )}
-        </Pressable>
+          isLast={true}
+        />
 
         {/* Phases Section */}
-        <Text className="text-white font-spaceBold text-lg mb-3">Phases Overview</Text>
-        <View className="space-y-4 mb-12">
+        <Text className="text-white font-spaceBold text-lg mb-3">
+          Phases Overview
+        </Text>
+        <View className="space-y-4 mb-12 gap-3">
           {item.phases.map((phase: any) => (
             <View
               key={phase.phase}
-              className="bg-neutral-900/40 border border-neutral-900 p-5 rounded-3xl"
+              className="bg-tertiary/40 border border-neutral-900 p-5 rounded-3xl"
             >
               <View className="flex-row justify-between items-center mb-2">
-                <Text className="text-[#fba613] font-spaceBold text-sm">
+                <Text className="text-secondary font-spaceBold text-sm">
                   Phase {phase.phase} — {phase.name}
                 </Text>
                 <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase">
@@ -266,7 +346,7 @@ export default function CharacterDetail() {
       <View className="p-5 bg-primary border-t border-neutral-950">
         <Pressable
           onPress={handleStartProgram}
-          className="bg-[#fba613] py-4 rounded-2xl items-center justify-center shadow-lg active:opacity-90"
+          className="bg-secondary py-4 rounded-2xl items-center justify-center shadow-lg active:opacity-90"
         >
           <Text className="text-black font-spaceBold text-sm uppercase tracking-wider">
             Start This Program

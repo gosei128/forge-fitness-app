@@ -156,7 +156,9 @@ export default function Profile() {
   const streak = stats?.currentStreak ?? 0;
   const totalXp = stats?.totalXp ?? 0;
   const rank = stats?.currentRank ?? "Newbie";
-  const currentGoal = stats?.selectedArchetypeId ? getArchetype(stats.selectedArchetypeId) : null;
+  const currentGoal = stats?.selectedArchetypeId
+    ? getArchetype(stats.selectedArchetypeId)
+    : null;
 
   if (loading) {
     return (
@@ -186,7 +188,10 @@ export default function Profile() {
             {userName}
           </Text>
           <Text className="text-secondary font-spaceBold text-xs mt-1">
-            {rank} • Goal — {currentGoal ? `${currentGoal.character} Build` : "No goal selected"}
+            {rank} • Goal —{" "}
+            {currentGoal
+              ? `${currentGoal.character} Build`
+              : "No goal selected"}
           </Text>
         </Animated.View>
 
@@ -299,25 +304,31 @@ export default function Profile() {
                     </Text>
                   </View>
                 )}
-                {currentGoal.targets.pullUps && (
-                  <View className="flex-row justify-between items-center py-1">
-                    <Text className="text-neutral-400 font-spaceRegular text-sm">
-                      Pull-ups
-                    </Text>
-                    <Text className="text-white font-spaceBold text-sm">
-                      {currentGoal.targets.pullUps} reps
-                    </Text>
-                  </View>
-                )}
+
                 <View className="flex-row justify-between items-center py-1">
                   <Text className="text-neutral-400 font-spaceRegular text-sm">
                     Focus
                   </Text>
-                  <Text className="text-white font-spaceBold text-sm text-right flex-1 ml-4" numberOfLines={1}>
+                  <Text
+                    className="text-white font-spaceBold text-sm text-right flex-1 ml-4"
+                    numberOfLines={1}
+                  >
                     {currentGoal.targets.focus}
                   </Text>
                 </View>
               </View>
+
+              <Spacer height={16} />
+              <Pressable
+                onPress={() =>
+                  router.push(`/archetypes/${currentGoal.id}` as any)
+                }
+                className="bg-secondary/10 border border-secondary/20 py-3 rounded-2xl items-center active:opacity-80"
+              >
+                <Text className="text-secondary font-spaceBold text-xs uppercase tracking-wider">
+                  View Program
+                </Text>
+              </Pressable>
             </View>
           </Animated.View>
         ) : (
@@ -336,7 +347,8 @@ export default function Profile() {
                 Choose Your Goal
               </Text>
               <Text className="text-neutral-500 font-spaceRegular text-xs text-center mb-4 leading-relaxed max-w-[240px]">
-                Your coach will build the path. Committing to a physique archetype dictates your training and targets.
+                Your coach will build the path. Committing to a physique
+                archetype dictates your training and targets.
               </Text>
               <Pressable
                 onPress={() => router.push("/archetypes")}

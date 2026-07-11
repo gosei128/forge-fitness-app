@@ -18,6 +18,7 @@ SplashScreen.preventAutoHideAsync();
 
 import { WorkoutSessionProvider } from "../context/WorkoutSessionContext";
 import ActiveWorkoutFloatingBar from "../components/ActiveWorkoutFloatingBar";
+import { GestureHandlerRootView } from "react-native-gesture-handler";
 
 const RootLayout = () => {
   const { success: migrationsSuccess, error: migrationsError } = useMigrations(
@@ -92,35 +93,57 @@ const RootLayout = () => {
     return null;
   }
 
+  let content;
   if (!hasUser) {
-    return (
+    content = (
       <Onboarding
-        onComplete={() => {
+        onComplete={(navigateTo?: string) => {
           setHasUser(true);
-          setTimeout(() => {
-            router.replace("/archetypes");
-          }, 50);
+          if (navigateTo) {
+            setTimeout(() => {
+              router.push(navigateTo as any);
+            }, 50);
+          }
         }}
       />
+    );
+  } else {
+    content = (
+      <WorkoutSessionProvider>
+        <View style={{ flex: 1 }}>
+          <Stack
+            screenOptions={{
+              contentStyle: { backgroundColor: "#131316" },
+            }}
+          >
+            <Stack.Screen name={"(tabs)"} options={{ headerShown: false }} />
+            <Stack.Screen
+              name={"(workouts)"}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name={"(exercises)"}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name={"archetypes"}
+              options={{ headerShown: false }}
+            />
+            <Stack.Screen
+              name={"onboarding"}
+              options={{ headerShown: false }}
+            />
+          </Stack>
+          <ActiveWorkoutFloatingBar />
+        </View>
+      </WorkoutSessionProvider>
     );
   }
 
   return (
-    <WorkoutSessionProvider>
-      <View style={{ flex: 1 }}>
-        <Stack
-          screenOptions={{
-            contentStyle: { backgroundColor: "#131316" },
-          }}
-        >
-          <Stack.Screen name={"(tabs)"} options={{ headerShown: false }} />
-          <Stack.Screen name={"(workouts)"} options={{ headerShown: false }} />
-          <Stack.Screen name={"(exercises)"} options={{ headerShown: false }} />
-          <Stack.Screen name={"archetypes"} options={{ headerShown: false }} />
-        </Stack>
-        <ActiveWorkoutFloatingBar />
-      </View>
-    </WorkoutSessionProvider>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      {content}
+    </GestureHandlerRootView>
   );
 };
 export default RootLayout;
