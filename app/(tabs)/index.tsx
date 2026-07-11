@@ -1,9 +1,9 @@
 import React, { useCallback, useState, useEffect } from "react";
-import { Text, View, Image, ScrollView } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { Text, View, Image, ScrollView, Pressable } from "react-native";
+import { router, useFocusEffect } from "expo-router";
 import Header from "../../components/Header";
 import Spacer from "../../components/Spacer";
-import { Flame, Trophy, Dumbbell } from "lucide-react-native";
+import { Flame, Trophy, Dumbbell, Sword } from "lucide-react-native";
 import { db } from "../../db";
 import { user, userStats } from "../../db/schema";
 import { eq } from "drizzle-orm";
@@ -13,7 +13,11 @@ import Animated, {
   withTiming,
   withRepeat,
   withSequence,
+  withSpring,
+  runOnJS,
 } from "react-native-reanimated";
+import { getMissions, Mission } from "../../lib/missionEngine";
+import { getCoachLine } from "../../lib/coachEngine";
 
 /**
  * Animated Progress Bar for Level Card
@@ -32,7 +36,7 @@ function AnimatedProgressBar({ progress }: { progress: number }) {
   });
 
   return (
-    <View className="h-2 w-full bg-neutral-850 rounded-full overflow-hidden">
+    <View className="h-2 w-full bg-primary rounded-full overflow-hidden">
       <Animated.View
         style={animatedStyle}
         className="h-full bg-secondary rounded-full"
@@ -51,10 +55,10 @@ function AnimatedFlame() {
     scale.value = withRepeat(
       withSequence(
         withTiming(1.15, { duration: 800 }),
-        withTiming(1.0, { duration: 800 })
+        withTiming(1.0, { duration: 800 }),
       ),
       -1,
-      true
+      true,
     );
   }, []);
 
@@ -75,36 +79,54 @@ function AnimatedFlame() {
  * Animated Level number that fades and scales on update
  */
 function AnimatedLevelNumber({ level }: { level: number }) {
-  const opacity = useSharedValue(0);
-  const scale = useSharedValue(0.7);
+  const [currentLevel, setCurrentLevel] = useState(level);
+  const [prevLevel, setPrevLevel] = useState(level);
+  const translateY = useSharedValue(0);
 
   useEffect(() => {
-    opacity.value = 0;
-    scale.value = 0.7;
-    opacity.value = withTiming(1, { duration: 500 });
-    scale.value = withTiming(1, { duration: 500 });
-  }, [level]);
+    if (level !== currentLevel) {
+      setPrevLevel(currentLevel);
+      setCurrentLevel(level);
+      translateY.value = 0;
+      translateY.value = withSpring(
+        -48,
+        { damping: 15, stiffness: 120 },
+        (finished) => {
+          if (finished) {
+            runOnJS(setPrevLevel)(level);
+          }
+        },
+      );
+    }
+  }, [level, currentLevel]);
 
   const animatedStyle = useAnimatedStyle(() => {
+    const activeTranslation = prevLevel === currentLevel ? 0 : translateY.value;
     return {
-      opacity: opacity.value,
-      transform: [{ scale: scale.value }],
+      transform: [{ translateY: activeTranslation }],
     };
   });
 
   return (
-    <Animated.Text
-      style={animatedStyle}
-      className="font-spaceBold text-white text-5xl mt-1 leading-none"
-    >
-      {level}
-    </Animated.Text>
+    <View style={{ height: 48, overflow: "hidden" }} className="mt-1">
+      <Animated.View style={animatedStyle}>
+        <Text
+          style={{ height: 48 }}
+          className="font-spaceBold text-white text-5xl leading-none"
+        >
+          {prevLevel}
+        </Text>
+        <Text
+          style={{ height: 48 }}
+          className="font-spaceBold text-white text-5xl leading-none"
+        >
+          {currentLevel}
+        </Text>
+      </Animated.View>
+    </View>
   );
 }
 
-/**
- * Helper to get user's title based on level
- */
 export default function Index() {
   const [stats, setStats] = useState<{
     currentLevel: number;
@@ -113,6 +135,11 @@ export default function Index() {
     longestStreak: number;
     currentRank: string;
   } | null>(null);
+
+  const [missionList, setMissionList] = useState<Mission[]>([]);
+  const [coachLine, setCoachLine] = useState<string>(
+    "Motivation gets you started, but discipline keeps you going. 💪"
+  );
 
   // Fetch the actual stats when page is focused
   useFocusEffect(
@@ -129,6 +156,12 @@ export default function Index() {
               .from(userStats)
               .where(eq(userStats.userId, userId))
               .limit(1);
+            const activeMissions = await getMissions(userId);
+            setMissionList(activeMissions);
+            const coachData = await getCoachLine(userId);
+            if (isMounted) {
+              setCoachLine(coachData.line);
+            }
             if (res.length > 0 && isMounted) {
               setStats(res[0]);
             } else if (isMounted) {
@@ -157,7 +190,7 @@ export default function Index() {
       return () => {
         isMounted = false;
       };
-    }, [])
+    }, []),
   );
 
   const level = stats?.currentLevel ?? 1;
@@ -169,7 +202,10 @@ export default function Index() {
   // Level L range starts at minXp and goes to maxXp (which is start of L+1)
   const minXp = level === 1 ? 0 : level * 500;
   const maxXp = (level + 1) * 500;
-  const progress = Math.max(0, Math.min(1, (totalXp - minXp) / (maxXp - minXp)));
+  const progress = Math.max(
+    0,
+    Math.min(1, (totalXp - minXp) / (maxXp - minXp)),
+  );
 
   return (
     <View className="flex-1 bg-primary">
@@ -194,9 +230,7 @@ export default function Index() {
           </Text>
 
           <Text className="font-spaceRegular text-white text-sm leading-relaxed">
-            "Motivation gets you started, but discipline keeps you going. 💪
-            Don't wait to feel like working out. Do it anyway. What's the game
-            plan for today?"
+            "{coachLine}"
           </Text>
         </View>
       </View>
@@ -247,51 +281,40 @@ export default function Index() {
           <Text className="font-spaceBold text-white text-lg">
             Active missions
           </Text>
-          <Text className="font-spaceBold text-secondary text-xs">
-            View all
-          </Text>
+          <Pressable
+            onPress={() => router.push("/(tabs)/missions")}
+            className="flex-row items-center gap-1.5"
+          >
+            <Text className="font-spaceBold text-secondary text-xs">
+              View all
+            </Text>
+          </Pressable>
         </View>
         <Spacer height={10} />
 
         {/* Mission 1 */}
-        <View className="bg-tertiary border border-neutral-900 rounded-2xl p-4 mb-3 flex-row items-center justify-between">
-          <View className="flex-1 mr-4">
-            <View className="flex-row items-center gap-3">
-              <View className="bg-neutral-900 p-2.5 rounded-xl border border-neutral-850">
-                <Dumbbell size={16} color="#f3ff47" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-white font-spaceBold text-sm mb-1.5">
-                  Log 4 sessions this week
-                </Text>
-                <View className="h-1.5 w-full bg-neutral-850 rounded-full overflow-hidden">
-                  <View className="h-full bg-secondary rounded-full" style={{ width: '75%' }} />
+        {missionList.map((mission) => (
+          <View
+            key={mission.id}
+            className="bg-tertiary border border-neutral-900 rounded-2xl p-4 mb-3 flex-row items-center justify-between"
+          >
+            <View className="flex-1 mr-4">
+              <View className="flex-row items-center gap-3">
+                <View className="bg-neutral-900 p-2.5 rounded-xl border border-neutral-850">
+                  <Sword size={16} color="#f3ff47" />
+                </View>
+                <View className="flex-1">
+                  <Text className="text-white font-spaceBold text-sm mb-1.5">
+                    {mission.description}
+                  </Text>
                 </View>
               </View>
             </View>
+            <Text className="text-secondary font-spaceBold text-xs">
+              {mission.xpReward} XP
+            </Text>
           </View>
-          <Text className="text-secondary font-spaceBold text-xs">+150 XP</Text>
-        </View>
-
-        {/* Mission 2 */}
-        <View className="bg-tertiary border border-neutral-900 rounded-2xl p-4 mb-8 flex-row items-center justify-between">
-          <View className="flex-1 mr-4">
-            <View className="flex-row items-center gap-3">
-              <View className="bg-neutral-900 p-2.5 rounded-xl border border-neutral-850">
-                <Trophy size={16} color="#f3ff47" />
-              </View>
-              <View className="flex-1">
-                <Text className="text-white font-spaceBold text-sm mb-1.5">
-                  Hit a new PR this week
-                </Text>
-                <View className="h-1.5 w-full bg-neutral-850 rounded-full overflow-hidden">
-                  <View className="h-full bg-secondary rounded-full" style={{ width: '25%' }} />
-                </View>
-              </View>
-            </View>
-          </View>
-          <Text className="text-secondary font-spaceBold text-xs">+200 XP</Text>
-        </View>
+        ))}
       </ScrollView>
     </View>
   );

@@ -207,7 +207,7 @@ Build in `lib/` as pure async TypeScript functions:
 Mission types: "Log N sessions this week", "Hit a PR", "Train [muscleGroup] twice".
 Generator runs daily/weekly. Progress hooks into workout logging. Rewards XP on completion.
 
-### ⬜ Phase 5 — Coach (Rule-Based v1)
+### ✅ Phase 5 — Coach (Rule-Based v1)
 Coach line categories: `onPR`, `onMissedDays`, `onSessionComplete`, `onLevelUp`, `onMissionComplete`, `onIdle`.
 5–10 lines per category. Calm + adaptive tone. Trigger logic fires contextually, not randomly.
 
