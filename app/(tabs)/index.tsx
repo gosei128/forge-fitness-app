@@ -138,7 +138,7 @@ export default function Index() {
 
   const [missionList, setMissionList] = useState<Mission[]>([]);
   const [coachLine, setCoachLine] = useState<string>(
-    "Motivation gets you started, but discipline keeps you going. 💪"
+    "Motivation gets you started, but discipline keeps you going. 💪",
   );
 
   // Fetch the actual stats when page is focused
@@ -229,8 +229,8 @@ export default function Index() {
             Sigma
           </Text>
 
-          <Text className="font-spaceRegular text-white text-sm leading-relaxed">
-            "{coachLine}"
+          <Text className="font-spaceRegular pl-3 text-white text-sm leading-relaxed">
+            {coachLine}
           </Text>
         </View>
       </View>

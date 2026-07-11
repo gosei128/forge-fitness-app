@@ -3,7 +3,7 @@ import React, { useEffect } from "react";
 import migration from "../drizzle/migrations";
 import { db } from "../db";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import "../global.css";
 import { exercises, user } from "../db/schema";
 import { useFonts } from "expo-font";
@@ -93,7 +93,16 @@ const RootLayout = () => {
   }
 
   if (!hasUser) {
-    return <Onboarding onComplete={() => setHasUser(true)} />;
+    return (
+      <Onboarding
+        onComplete={() => {
+          setHasUser(true);
+          setTimeout(() => {
+            router.replace("/archetypes");
+          }, 50);
+        }}
+      />
+    );
   }
 
   return (
@@ -107,6 +116,7 @@ const RootLayout = () => {
           <Stack.Screen name={"(tabs)"} options={{ headerShown: false }} />
           <Stack.Screen name={"(workouts)"} options={{ headerShown: false }} />
           <Stack.Screen name={"(exercises)"} options={{ headerShown: false }} />
+          <Stack.Screen name={"archetypes"} options={{ headerShown: false }} />
         </Stack>
         <ActiveWorkoutFloatingBar />
       </View>

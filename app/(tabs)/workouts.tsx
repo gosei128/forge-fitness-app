@@ -56,45 +56,6 @@ interface Exercise {
   weightUnit?: string;
 }
 
-// const TEMPLATES = [
-//   {
-//     id: "push",
-//     name: "Push Day",
-//     exercises: [
-//       "barbell bench press",
-//       "dumbbell seated shoulder press",
-//       "push-up",
-//     ],
-//     exerciseUnits: ["lbs", "lbs", "bodyweight"],
-//     description: "Build chest, shoulders, and triceps strength",
-//     restTime: 60,
-//   },
-//   {
-//     id: "pull",
-//     name: "Pull Day",
-//     exercises: ["pull-up", "barbell curl", "barbell deadlift"],
-//     exerciseUnits: ["bodyweight", "lbs", "lbs"],
-//     description: "Focus on upper back, lats, and bicep thickness",
-//     restTime: 90,
-//   },
-//   {
-//     id: "legs",
-//     name: "Leg Day",
-//     exercises: ["barbell full squat", "lever lying leg curl"],
-//     exerciseUnits: ["lbs", "lbs"],
-//     description: "Focus on quad power and hamstring development",
-//     restTime: 90,
-//   },
-// ];
-
-const capitalize = (str: string) => {
-  if (!str) return "";
-  return str
-    .split(" ")
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
-};
-
 function formatDate(date: Date | null | number): string {
   if (!date) return "";
   const d = new Date(date);

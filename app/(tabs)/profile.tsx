@@ -6,15 +6,21 @@ import {
   Pressable,
   ActivityIndicator,
 } from "react-native";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, router } from "expo-router";
 import Header from "../../components/Header";
 import Spacer from "../../components/Spacer";
 import { Trophy, Flame, Dumbbell } from "lucide-react-native";
 import { db } from "../../db";
-import { user, userStats, workoutSessions, personalRecords, exercises } from "../../db/schema";
+import {
+  user,
+  userStats,
+  workoutSessions,
+  personalRecords,
+  exercises,
+} from "../../db/schema";
 import { eq, desc } from "drizzle-orm";
 import Animated, { FadeInUp } from "react-native-reanimated";
-
+import { getAllArchetypes, getArchetype } from "../../lib/archetypes";
 interface PRItem {
   prId: number;
   weight: number;
@@ -33,7 +39,8 @@ function timeAgo(date: Date | null | number): string {
   const diffWeeks = Math.floor(diffDays / 7);
 
   if (diffMins < 60) return `${diffMins} min${diffMins !== 1 ? "s" : ""} ago`;
-  if (diffHours < 24) return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
+  if (diffHours < 24)
+    return `${diffHours} hour${diffHours !== 1 ? "s" : ""} ago`;
   if (diffDays === 1) return "yesterday";
   if (diffDays < 7) return `${diffDays} days ago`;
   if (diffWeeks === 1) return "last week";
@@ -55,10 +62,13 @@ export default function Profile() {
     currentStreak: number;
     longestStreak: number;
     currentRank: string;
+    selectedArchetypeId?: string | null;
+    currentPhase?: number | null;
   } | null>(null);
   const [sessionsCount, setSessionsCount] = useState(0);
   const [prList, setPrList] = useState<PRItem[]>([]);
   const [userName, setUserName] = useState("Roni");
+  const archetypes = getAllArchetypes();
 
   useFocusEffect(
     useCallback(() => {
@@ -90,6 +100,8 @@ export default function Profile() {
                 currentStreak: 0,
                 longestStreak: 0,
                 currentRank: "Newbie",
+                selectedArchetypeId: null,
+                currentPhase: null,
               });
             }
 
@@ -98,7 +110,7 @@ export default function Profile() {
               .select()
               .from(workoutSessions)
               .where(eq(workoutSessions.userId, userId));
-            const completedSessions = sessions.filter(s => s.completedAt);
+            const completedSessions = sessions.filter((s) => s.completedAt);
             if (isMounted) {
               setSessionsCount(completedSessions.length);
             }
@@ -113,7 +125,10 @@ export default function Profile() {
                 exerciseName: exercises.name,
               })
               .from(personalRecords)
-              .innerJoin(exercises, eq(personalRecords.exerciseId, exercises.id))
+              .innerJoin(
+                exercises,
+                eq(personalRecords.exerciseId, exercises.id),
+              )
               .where(eq(personalRecords.userId, userId))
               .orderBy(desc(personalRecords.achievedAt))
               .limit(3);
@@ -134,18 +149,19 @@ export default function Profile() {
       return () => {
         isMounted = false;
       };
-    }, [])
+    }, []),
   );
 
   const level = stats?.currentLevel ?? 1;
   const streak = stats?.currentStreak ?? 0;
   const totalXp = stats?.totalXp ?? 0;
   const rank = stats?.currentRank ?? "Newbie";
+  const currentGoal = stats?.selectedArchetypeId ? getArchetype(stats.selectedArchetypeId) : null;
 
   if (loading) {
     return (
       <View className="flex-1 bg-primary justify-center items-center">
-        <ActivityIndicator size="large" color="#f3ff47" />
+        <ActivityIndicator size="large" color="#fba613" />
       </View>
     );
   }
@@ -157,7 +173,7 @@ export default function Profile() {
 
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
         {/* User Card Header */}
-        <Animated.View 
+        <Animated.View
           entering={FadeInUp.duration(400)}
           className="items-center mb-6 mt-4"
         >
@@ -166,104 +182,209 @@ export default function Profile() {
               {userName.charAt(0).toUpperCase()}
             </Text>
           </View>
-          <Text className="text-white font-spaceBold text-2xl mt-3">{userName}</Text>
-          <Text className="text-secondary font-spaceBold text-xs mt-1">{rank} • Goal — Batman Build</Text>
+          <Text className="text-white font-spaceBold text-2xl mt-3">
+            {userName}
+          </Text>
+          <Text className="text-secondary font-spaceBold text-xs mt-1">
+            {rank} • Goal — {currentGoal ? `${currentGoal.character} Build` : "No goal selected"}
+          </Text>
         </Animated.View>
 
         {/* Stats Row Cards */}
         <View className="flex-row justify-between mb-8 gap-2">
           {/* Level */}
-          <Animated.View 
+          <Animated.View
             entering={FadeInUp.delay(100).duration(400)}
             className="flex-1 bg-tertiary border border-neutral-900 rounded-2xl py-4 items-center"
           >
-            <Text className="text-white font-spaceBold text-xl mb-1">{level}</Text>
-            <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase">Level</Text>
+            <Text className="text-white font-spaceBold text-xl mb-1">
+              {level}
+            </Text>
+            <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase">
+              Level
+            </Text>
           </Animated.View>
           {/* Day streak */}
-          <Animated.View 
+          <Animated.View
             entering={FadeInUp.delay(150).duration(400)}
             className="flex-1 bg-tertiary border border-neutral-900 rounded-2xl py-4 items-center"
           >
-            <Text className="text-white font-spaceBold text-xl mb-1">{streak}</Text>
-            <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase">Day streak</Text>
+            <Text className="text-white font-spaceBold text-xl mb-1">
+              {streak}
+            </Text>
+            <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase">
+              Day streak
+            </Text>
           </Animated.View>
           {/* Sessions */}
-          <Animated.View 
+          <Animated.View
             entering={FadeInUp.delay(200).duration(400)}
             className="flex-1 bg-tertiary border border-neutral-900 rounded-2xl py-4 items-center"
           >
-            <Text className="text-white font-spaceBold text-xl mb-1">{sessionsCount}</Text>
-            <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase">Sessions</Text>
+            <Text className="text-white font-spaceBold text-xl mb-1">
+              {sessionsCount}
+            </Text>
+            <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase">
+              Sessions
+            </Text>
           </Animated.View>
           {/* Total XP */}
-          <Animated.View 
+          <Animated.View
             entering={FadeInUp.delay(250).duration(400)}
             className="flex-1 bg-tertiary border border-neutral-900 rounded-2xl py-4 items-center"
           >
-            <Text className="text-white font-spaceBold text-xl mb-1">{formatXP(totalXp)}</Text>
-            <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase">Total XP</Text>
+            <Text className="text-white font-spaceBold text-xl mb-1">
+              {formatXP(totalXp)}
+            </Text>
+            <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase">
+              Total XP
+            </Text>
           </Animated.View>
         </View>
 
         {/* Current Goal Section */}
-        <Animated.View entering={FadeInUp.delay(300).duration(400)} className="mb-6">
-          <View className="flex-row justify-between items-center mb-3">
-            <Text className="text-white font-spaceBold text-lg">Current goal</Text>
-            <Pressable>
-              <Text className="text-secondary font-spaceBold text-xs">Change</Text>
-            </Pressable>
-          </View>
-
-          <View className="bg-tertiary border border-neutral-900 rounded-3xl p-5 relative">
-            <View className="absolute top-5 right-5 bg-secondary/10 border border-secondary/35 rounded-full px-2 py-0.5">
-              <Text className="text-secondary font-spaceBold text-[10px]">In progress</Text>
+        {currentGoal ? (
+          <Animated.View
+            entering={FadeInUp.delay(300).duration(400)}
+            className="mb-6"
+          >
+            <View className="flex-row justify-between items-center mb-3">
+              <Text className="text-white font-spaceBold text-lg">
+                Current goal
+              </Text>
+              <Pressable onPress={() => router.push("/archetypes")}>
+                <Text className="text-secondary font-spaceBold text-xs">
+                  Change
+                </Text>
+              </Pressable>
             </View>
 
-            <Text className="text-white font-spaceBold text-lg mb-4">Batman Build</Text>
-            
-            <View className="space-y-3">
-              <View className="flex-row justify-between items-center py-1">
-                <Text className="text-neutral-400 font-spaceRegular text-sm">Body fat</Text>
-                <Text className="text-white font-spaceBold text-sm">10–12%</Text>
+            <View className="bg-tertiary border border-neutral-900 rounded-3xl p-5 relative">
+              <View className="absolute top-5 right-5 bg-secondary/10 border border-secondary/35 rounded-full px-2 py-0.5">
+                <Text className="text-secondary font-spaceBold text-[10px]">
+                  In progress
+                </Text>
               </View>
-              <View className="flex-row justify-between items-center py-1">
-                <Text className="text-neutral-400 font-spaceRegular text-sm">Bench press</Text>
-                <Text className="text-white font-spaceBold text-sm">1.2× bodyweight</Text>
-              </View>
-              <View className="flex-row justify-between items-center py-1">
-                <Text className="text-neutral-400 font-spaceRegular text-sm">Pull-ups</Text>
-                <Text className="text-white font-spaceBold text-sm">15 reps</Text>
+
+              <Text className="text-white font-spaceBold text-lg mb-4">
+                {currentGoal.character} Build
+              </Text>
+
+              <View className="space-y-3">
+                <View className="flex-row justify-between items-center py-1">
+                  <Text className="text-neutral-400 font-spaceRegular text-sm">
+                    Body fat
+                  </Text>
+                  <Text className="text-white font-spaceBold text-sm">
+                    {currentGoal.targets.bodyFat}
+                  </Text>
+                </View>
+                {currentGoal.targets.benchPress && (
+                  <View className="flex-row justify-between items-center py-1">
+                    <Text className="text-neutral-400 font-spaceRegular text-sm">
+                      Bench press
+                    </Text>
+                    <Text className="text-white font-spaceBold text-sm">
+                      {currentGoal.targets.benchPress}
+                    </Text>
+                  </View>
+                )}
+                {currentGoal.targets.deadlift && (
+                  <View className="flex-row justify-between items-center py-1">
+                    <Text className="text-neutral-400 font-spaceRegular text-sm">
+                      Deadlift
+                    </Text>
+                    <Text className="text-white font-spaceBold text-sm">
+                      {currentGoal.targets.deadlift}
+                    </Text>
+                  </View>
+                )}
+                {currentGoal.targets.pullUps && (
+                  <View className="flex-row justify-between items-center py-1">
+                    <Text className="text-neutral-400 font-spaceRegular text-sm">
+                      Pull-ups
+                    </Text>
+                    <Text className="text-white font-spaceBold text-sm">
+                      {currentGoal.targets.pullUps} reps
+                    </Text>
+                  </View>
+                )}
+                <View className="flex-row justify-between items-center py-1">
+                  <Text className="text-neutral-400 font-spaceRegular text-sm">
+                    Focus
+                  </Text>
+                  <Text className="text-white font-spaceBold text-sm text-right flex-1 ml-4" numberOfLines={1}>
+                    {currentGoal.targets.focus}
+                  </Text>
+                </View>
               </View>
             </View>
-          </View>
-        </Animated.View>
+          </Animated.View>
+        ) : (
+          <Animated.View
+            entering={FadeInUp.delay(300).duration(400)}
+            className="mb-6"
+          >
+            <View className="flex-row justify-between items-center mb-3">
+              <Text className="text-white font-spaceBold text-lg">
+                Current goal
+              </Text>
+            </View>
+
+            <View className="bg-tertiary border border-neutral-900 border-dashed rounded-3xl p-6 items-center justify-center">
+              <Text className="text-white font-spaceBold text-base mb-1">
+                Choose Your Goal
+              </Text>
+              <Text className="text-neutral-500 font-spaceRegular text-xs text-center mb-4 leading-relaxed max-w-[240px]">
+                Your coach will build the path. Committing to a physique archetype dictates your training and targets.
+              </Text>
+              <Pressable
+                onPress={() => router.push("/archetypes")}
+                className="bg-secondary px-6 py-2.5 rounded-xl active:opacity-90"
+              >
+                <Text className="text-black font-spaceBold text-xs uppercase tracking-wider">
+                  Pick Archetype
+                </Text>
+              </Pressable>
+            </View>
+          </Animated.View>
+        )}
 
         {/* Personal Records Section */}
-        <Animated.View entering={FadeInUp.delay(400).duration(400)} className="mb-16">
+        <Animated.View
+          entering={FadeInUp.delay(400).duration(400)}
+          className="mb-16"
+        >
           <View className="flex-row justify-between items-center mb-3">
-            <Text className="text-white font-spaceBold text-lg">Personal records</Text>
+            <Text className="text-white font-spaceBold text-lg">
+              Personal records
+            </Text>
             <Pressable>
-              <Text className="text-secondary font-spaceBold text-xs">All PRs</Text>
+              <Text className="text-secondary font-spaceBold text-xs">
+                All PRs
+              </Text>
             </Pressable>
           </View>
 
           {prList.length === 0 ? (
             <View className="bg-tertiary border border-neutral-900 border-dashed rounded-3xl p-8 items-center justify-center">
               <Text className="text-neutral-500 font-spaceRegular text-sm text-center">
-                No personal records logged yet. Complete a workout to set new PRs!
+                No personal records logged yet. Complete a workout to set new
+                PRs!
               </Text>
             </View>
           ) : (
             <View className="space-y-3">
               {prList.map((pr, index) => (
-                <Animated.View 
-                  key={pr.prId} 
+                <Animated.View
+                  key={pr.prId}
                   entering={FadeInUp.delay(450 + index * 50).duration(400)}
                   className="bg-tertiary border border-neutral-900 rounded-2xl p-4 flex-row justify-between items-center"
                 >
                   <View>
-                    <Text className="text-white font-spaceBold text-sm capitalize">{pr.exerciseName}</Text>
+                    <Text className="text-white font-spaceBold text-sm capitalize">
+                      {pr.exerciseName}
+                    </Text>
                     <Text className="text-neutral-500 font-spaceRegular text-xs mt-0.5">
                       {pr.reps} reps · {timeAgo(pr.achievedAt)}
                     </Text>

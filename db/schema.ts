@@ -96,6 +96,8 @@ export const userStats = sqliteTable("user_stats", {
   currentStreak: int("current_streak").notNull().default(0),
   longestStreak: int("longest_streak").notNull().default(0),
   lastWorkoutAt: int("last_workout_at", { mode: "timestamp" }),
+  selectedArchetypeId: text("selected_archetype_id"),
+  currentPhase: int("current_phase"),
 });
 
 export const workoutTemplates = sqliteTable("workout_templates", {

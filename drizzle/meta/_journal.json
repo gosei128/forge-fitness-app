@@ -64,6 +64,13 @@
       "when": 1783447549119,
       "tag": "0008_ranks",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1783457549119,
+      "tag": "0009_archetype_selection",
+      "breakpoints": true
     }
   ]
 }

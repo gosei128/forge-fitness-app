@@ -1,0 +1,486 @@
+[
+  {
+    "id": "nightwing",
+    "character": "Nightwing",
+    "archetype": "Acrobatic Athlete",
+    "description": "Dick Grayson — former circus acrobat turned elite vigilante. The Nightwing build is not about being the biggest or the strongest. It is about being the most capable body in the room. Lean, explosive, impossibly agile, with the endurance to fight all night.",
+    "difficulty": "intermediate",
+    "realWorldEquivalent": "Gymnast meets martial artist. Think Olympic gymnast body — low body fat, high relative strength, explosive power in every direction.",
+    "targets": {
+      "bodyFat": "8-10%",
+      "pullUps": 20,
+      "pushUps": 50,
+      "focus": "Calisthenics + explosive athleticism"
+    },
+    "bodyTypeDiscussion": {
+      "overview": "Nightwing's physique is built on relative strength — how strong you are relative to your own bodyweight. He moves his body through space better than almost anyone alive. This is not a mass-building program. This is about making your bodyweight feel like nothing.",
+      "expectations": "You will not get dramatically bigger. You will get leaner, faster, and stronger in ways that actually translate to movement. Shoulders and back will develop significantly from the pull volume. Core becomes a foundation, not an afterthought.",
+      "timeline": "12 to 16 weeks to see the full shape. The leanness comes from the conditioning work — Nightwing never stops moving.",
+      "coachNote": "This build requires honesty. If you cannot do 10 clean pull-ups yet, we start there. No ego. The acrobat's body is earned through consistency, not intensity."
+    },
+    "coachLines": {
+      "onStart": "Nightwing is not the strongest person in the room. He is the most dangerous. That difference is built here.",
+      "onSessionComplete": "Clean work. Your body is learning to move the way it was designed to.",
+      "onPhaseComplete": "The foundation is set. You are moving better. Now we make it explosive.",
+      "onPR": "Stronger relative to your bodyweight. That is the only metric that matters for this build.",
+      "onMissedDays": "Grayson trained through broken ribs. You have no excuse. But you are back now. That counts.",
+      "onLevelUp": "The agility is building. You can feel it in how you move.",
+      "onBodyTypeExplain": "Nightwing carries around 8 to 10 percent body fat with a lean, athletic frame. No excess mass. Every pound of muscle has a purpose — pulling, pushing, jumping, rotating. Think Olympic gymnast. That is the standard."
+    },
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Bodyweight Foundation",
+        "weeks": 4,
+        "description": "Master the fundamental bodyweight movements before adding load or complexity. Pull-ups, dips, push-ups — these must be clean before anything else.",
+        "workouts": [
+          {
+            "day": 1,
+            "name": "Push + Core",
+            "exercises": [
+              { "name": "chest tap push-up (male)", "sets": 4, "reps": "10-15", "rest": 60 },
+              { "name": "weighted tricep dips", "sets": 4, "reps": "10-12", "rest": 90 },
+              { "name": "exercise ball pike push up", "sets": 3, "reps": "10", "rest": 60 },
+              { "name": "mountain climber", "sets": 4, "reps": "30 seconds", "rest": 45 },
+              { "name": "hanging knee raise", "sets": 3, "reps": "15", "rest": 60 }
+            ]
+          },
+          {
+            "day": 2,
+            "name": "Pull + Explosive",
+            "exercises": [
+              { "name": "pull-up", "sets": 5, "reps": "max", "rest": 120 },
+              { "name": "chin-up", "sets": 3, "reps": "10-12", "rest": 90 },
+              { "name": "archer pull up", "sets": 3, "reps": "6 each side", "rest": 120 },
+              { "name": "jump rope", "sets": 5, "reps": "60 seconds", "rest": 30 },
+              { "name": "box jump down with one leg stabilization", "sets": 3, "reps": "8", "rest": 90 }
+            ]
+          },
+          {
+            "day": 3,
+            "name": "Lower Body + Conditioning",
+            "exercises": [
+              { "name": "dumbbell goblet squat", "sets": 4, "reps": "12", "rest": 90 },
+              { "name": "dumbbell lunge", "sets": 3, "reps": "10 each leg", "rest": 90 },
+              { "name": "barbell romanian deadlift", "sets": 3, "reps": "10", "rest": 90 },
+              { "name": "burpee", "sets": 4, "reps": "10", "rest": 60 },
+              { "name": "hanging leg raise", "sets": 4, "reps": "12", "rest": 60 }
+            ]
+          }
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Explosive Strength",
+        "weeks": 5,
+        "description": "Add load to compound movements and increase explosive work. This is where the athletic edge starts showing.",
+        "workouts": [
+          {
+            "day": 1,
+            "name": "Upper Power",
+            "exercises": [
+              { "name": "weighted pull-up", "sets": 5, "reps": "6-8", "rest": 120 },
+              { "name": "archer push up", "sets": 4, "reps": "8 each side", "rest": 90 },
+              { "name": "weighted tricep dips", "sets": 4, "reps": "8-10", "rest": 90 },
+              { "name": "cable lat pulldown full range of motion", "sets": 3, "reps": "10", "rest": 90 },
+              { "name": "cable one arm tricep pushdown", "sets": 3, "reps": "12", "rest": 60 }
+            ]
+          },
+          {
+            "day": 2,
+            "name": "Lower Power",
+            "exercises": [
+              { "name": "barbell squat", "sets": 4, "reps": "6-8", "rest": 120 },
+              { "name": "barbell romanian deadlift", "sets": 4, "reps": "8", "rest": 120 },
+              { "name": "box jump down with one leg stabilization", "sets": 4, "reps": "8", "rest": 90 },
+              { "name": "barbell lunge", "sets": 3, "reps": "8 each leg", "rest": 90 },
+              { "name": "barbell standing calf raise", "sets": 4, "reps": "15", "rest": 60 }
+            ]
+          },
+          {
+            "day": 3,
+            "name": "Skill + Conditioning",
+            "exercises": [
+              { "name": "muscle up", "sets": 3, "reps": "max", "rest": 120 },
+              { "name": "l-sit on floor", "sets": 4, "reps": "20 seconds", "rest": 60 },
+              { "name": "handstand push-up", "sets": 3, "reps": "max", "rest": 120 },
+              { "name": "jump rope", "sets": 6, "reps": "90 seconds", "rest": 30 },
+              { "name": "cable russian twists (on stability ball)", "sets": 3, "reps": "20", "rest": 60 }
+            ]
+          }
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Peak Athleticism",
+        "weeks": 4,
+        "description": "Full integration of strength, skill, and conditioning. This is the complete Nightwing build.",
+        "workouts": [
+          {
+            "day": 1,
+            "name": "Full Body A",
+            "exercises": [
+              { "name": "weighted pull-up", "sets": 5, "reps": "5", "rest": 120 },
+              { "name": "barbell bench press", "sets": 4, "reps": "5", "rest": 120 },
+              { "name": "barbell squat", "sets": 4, "reps": "5", "rest": 120 },
+              { "name": "handstand push-up", "sets": 3, "reps": "max", "rest": 90 },
+              { "name": "hanging leg raise", "sets": 4, "reps": "15", "rest": 60 }
+            ]
+          },
+          {
+            "day": 2,
+            "name": "Full Body B",
+            "exercises": [
+              { "name": "muscle up", "sets": 4, "reps": "max", "rest": 120 },
+              { "name": "barbell deadlift", "sets": 4, "reps": "5", "rest": 180 },
+              { "name": "archer push up", "sets": 4, "reps": "8 each side", "rest": 90 },
+              { "name": "box jump down with one leg stabilization", "sets": 4, "reps": "8", "rest": 90 },
+              { "name": "l-sit on floor", "sets": 4, "reps": "30 seconds", "rest": 60 }
+            ]
+          },
+          {
+            "day": 3,
+            "name": "Conditioning Circuit",
+            "exercises": [
+              { "name": "burpee", "sets": 5, "reps": "15", "rest": 45 },
+              { "name": "jump rope", "sets": 6, "reps": "2 minutes", "rest": 30 },
+              { "name": "mountain climber", "sets": 4, "reps": "45 seconds", "rest": 30 },
+              { "name": "wind sprints", "sets": 8, "reps": "20 seconds", "rest": 40 },
+              { "name": "hanging knee raise", "sets": 3, "reps": "20", "rest": 60 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "toji",
+    "character": "Toji Fushiguro",
+    "archetype": "Peak Human Condition",
+    "description": "Toji Fushiguro has zero cursed energy — his strength is entirely physical. In a world of supernatural fighters, he became the most dangerous man alive through his body alone. This is the closest thing to a perfect human physique that exists in fiction — and it is actually achievable.",
+    "difficulty": "advanced",
+    "realWorldEquivalent": "Elite MMA fighter or Olympic weightlifter body. Extremely low body fat with dense, functional muscle. Not bulky — every muscle visible and purposeful.",
+    "targets": {
+      "bodyFat": "6-8%",
+      "deadlift": "2.5x bodyweight",
+      "pullUps": 25,
+      "focus": "Peak human strength, density, and leanness"
+    },
+    "bodyTypeDiscussion": {
+      "overview": "Toji's physique is what trainers call peak human condition. The absolute ceiling of what a natural human body can achieve — extremely low body fat, dense muscle mass, and functional strength that translates directly to real-world power. This is not a bodybuilder's physique. There is no water retention, no pump, no posing. This is a weapon.",
+      "expectations": "Expect significant visible change in 8 to 12 weeks if you are already training. Leanness is the priority — Toji's muscles look the way they do because there is nothing hiding them. The strength numbers will take longer, but the visual transformation happens through diet and conditioning as much as lifting.",
+      "timeline": "16 to 24 weeks for the full transformation. This is the hardest program in FORGE. It demands consistency, proper nutrition, and no shortcuts.",
+      "coachNote": "This program is not for beginners. If you are not comfortable with all the major compound lifts, choose Batman or Nightwing first. Toji is the endgame."
+    },
+    "coachLines": {
+      "onStart": "Toji had no power except his body. He made that enough to beat gods. Let's see what you do with yours.",
+      "onSessionComplete": "That session was earned. Not given.",
+      "onPhaseComplete": "One phase closer to the ceiling. Most people never get here.",
+      "onPR": "That is what peak human looks like. Remember how that felt.",
+      "onMissedDays": "Toji never missed. But you are not Toji yet. Get back under the bar.",
+      "onLevelUp": "The numbers are moving. The physique follows.",
+      "onBodyTypeExplain": "Toji sits at roughly 6 to 8 percent body fat with dense functional muscle. No excess. He looks the way he does because every muscle is developed and nothing is hiding it. The goal is not size — it is density and leanness simultaneously. That combination is the hardest thing to build and the most impressive thing to look at."
+    },
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Strength Foundation",
+        "weeks": 5,
+        "description": "Build the raw strength base across all major patterns. Heavy compound work with enough volume to drive hypertrophy.",
+        "workouts": [
+          {
+            "day": 1,
+            "name": "Heavy Pull",
+            "exercises": [
+              { "name": "barbell deadlift", "sets": 5, "reps": "5", "rest": 240 },
+              { "name": "weighted pull-up", "sets": 5, "reps": "6-8", "rest": 120 },
+              { "name": "cable seated row", "sets": 4, "reps": "8-10", "rest": 90 },
+              { "name": "barbell curl", "sets": 3, "reps": "8", "rest": 60 },
+              { "name": "dumbbell hammer curl", "sets": 3, "reps": "10", "rest": 60 }
+            ]
+          },
+          {
+            "day": 2,
+            "name": "Heavy Push",
+            "exercises": [
+              { "name": "barbell bench press", "sets": 5, "reps": "5", "rest": 180 },
+              { "name": "barbell seated overhead press", "sets": 5, "reps": "5", "rest": 180 },
+              { "name": "barbell incline bench press", "sets": 4, "reps": "6-8", "rest": 120 },
+              { "name": "weighted tricep dips", "sets": 4, "reps": "8", "rest": 90 },
+              { "name": "dumbbell lateral raise", "sets": 4, "reps": "12", "rest": 60 }
+            ]
+          },
+          {
+            "day": 3,
+            "name": "Heavy Legs",
+            "exercises": [
+              { "name": "barbell squat", "sets": 5, "reps": "5", "rest": 240 },
+              { "name": "barbell romanian deadlift", "sets": 4, "reps": "6-8", "rest": 120 },
+              { "name": "barbell lunge", "sets": 3, "reps": "8 each leg", "rest": 90 },
+              { "name": "inverse leg curl (bench support)", "sets": 4, "reps": "10", "rest": 60 },
+              { "name": "barbell standing calf raise", "sets": 4, "reps": "12", "rest": 60 }
+            ]
+          },
+          {
+            "day": 4,
+            "name": "Conditioning + Core",
+            "exercises": [
+              { "name": "kettlebell swing", "sets": 5, "reps": "20", "rest": 60 },
+              { "name": "burpee", "sets": 5, "reps": "12", "rest": 45 },
+              { "name": "wind sprints", "sets": 8, "reps": "20 seconds", "rest": 40 },
+              { "name": "hanging leg raise", "sets": 5, "reps": "15", "rest": 60 },
+              { "name": "cable russian twists (on stability ball)", "sets": 4, "reps": "20", "rest": 60 }
+            ]
+          }
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Density Block",
+        "weeks": 6,
+        "description": "The core Toji phase. Maximize strength on all lifts while conditioning work strips body fat. The physique takes shape here.",
+        "workouts": [
+          {
+            "day": 1,
+            "name": "Max Effort Lower",
+            "exercises": [
+              { "name": "barbell deadlift", "sets": 5, "reps": "3", "rest": 300 },
+              { "name": "barbell squat", "sets": 5, "reps": "3", "rest": 240 },
+              { "name": "barbell romanian deadlift", "sets": 4, "reps": "6", "rest": 120 },
+              { "name": "inverse leg curl (bench support)", "sets": 3, "reps": "10", "rest": 60 },
+              { "name": "barbell standing calf raise", "sets": 4, "reps": "12", "rest": 60 }
+            ]
+          },
+          {
+            "day": 2,
+            "name": "Max Effort Upper",
+            "exercises": [
+              { "name": "barbell bench press", "sets": 5, "reps": "3", "rest": 240 },
+              { "name": "barbell seated overhead press", "sets": 5, "reps": "3", "rest": 180 },
+              { "name": "weighted pull-up", "sets": 5, "reps": "5", "rest": 120 },
+              { "name": "cable seated row", "sets": 4, "reps": "8", "rest": 90 },
+              { "name": "barbell lying triceps extension skull crusher", "sets": 4, "reps": "6-8", "rest": 90 }
+            ]
+          },
+          {
+            "day": 3,
+            "name": "Explosive Conditioning",
+            "exercises": [
+              { "name": "kettlebell swing", "sets": 6, "reps": "20", "rest": 45 },
+              { "name": "box jump down with one leg stabilization", "sets": 5, "reps": "8", "rest": 60 },
+              { "name": "wind sprints", "sets": 10, "reps": "20 seconds", "rest": 40 },
+              { "name": "burpee", "sets": 5, "reps": "15", "rest": 45 },
+              { "name": "jump rope", "sets": 5, "reps": "2 minutes", "rest": 30 }
+            ]
+          },
+          {
+            "day": 4,
+            "name": "Accessory + Core",
+            "exercises": [
+              { "name": "dumbbell arnold press", "sets": 4, "reps": "10", "rest": 90 },
+              { "name": "dumbbell rear delt raise", "sets": 4, "reps": "12", "rest": 60 },
+              { "name": "dumbbell lateral raise", "sets": 4, "reps": "15", "rest": 60 },
+              { "name": "hanging leg raise", "sets": 5, "reps": "15", "rest": 60 },
+              { "name": "l-sit on floor", "sets": 4, "reps": "30 seconds", "rest": 60 },
+              { "name": "cable russian twists (on stability ball)", "sets": 4, "reps": "20", "rest": 60 }
+            ]
+          }
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Peak Human",
+        "weeks": 4,
+        "description": "Push every lift to a personal ceiling. Conditioning is at maximum intensity. This is the final form.",
+        "workouts": [
+          {
+            "day": 1,
+            "name": "Strength A",
+            "exercises": [
+              { "name": "barbell deadlift", "sets": 5, "reps": "2-3", "rest": 300 },
+              { "name": "weighted pull-up", "sets": 5, "reps": "5", "rest": 150 },
+              { "name": "barbell bench press", "sets": 5, "reps": "2-3", "rest": 240 },
+              { "name": "hanging leg raise", "sets": 4, "reps": "15", "rest": 60 }
+            ]
+          },
+          {
+            "day": 2,
+            "name": "Strength B",
+            "exercises": [
+              { "name": "barbell squat", "sets": 5, "reps": "2-3", "rest": 300 },
+              { "name": "barbell seated overhead press", "sets": 5, "reps": "3", "rest": 180 },
+              { "name": "cable seated row", "sets": 4, "reps": "6-8", "rest": 90 },
+              { "name": "l-sit on floor", "sets": 5, "reps": "30 seconds", "rest": 60 }
+            ]
+          },
+          {
+            "day": 3,
+            "name": "Peak Conditioning",
+            "exercises": [
+              { "name": "kettlebell swing", "sets": 8, "reps": "20", "rest": 30 },
+              { "name": "wind sprints", "sets": 12, "reps": "20 seconds", "rest": 40 },
+              { "name": "burpee", "sets": 6, "reps": "15", "rest": 30 },
+              { "name": "jump rope", "sets": 5, "reps": "3 minutes", "rest": 30 },
+              { "name": "mountain climber", "sets": 4, "reps": "60 seconds", "rest": 30 }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "id": "batman",
+    "character": "Batman",
+    "archetype": "Lean Functional Strength",
+    "description": "Bruce Wayne trains to be the perfect human weapon. Not the biggest. Not the fastest. The most complete. The Batman build is functional strength meets leanness meets endurance — a body that can do everything at a high level.",
+    "difficulty": "intermediate",
+    "realWorldEquivalent": "Special forces operator or elite decathlete. Capable across every physical domain — strong, lean, fast, and built to last hours under stress.",
+    "targets": {
+      "bodyFat": "10-12%",
+      "benchPress": "1.2x bodyweight",
+      "pullUps": 15,
+      "focus": "Functional strength + conditioning balance"
+    },
+    "bodyTypeDiscussion": {
+      "overview": "Batman's physique is the most balanced on this list. He is not trying to maximize any single quality — he is trying to be exceptional across all of them. Lean enough to move freely. Strong enough to overpower opponents. Conditioned enough to fight for hours. This is the most realistic physique goal for most people because it does not require sacrificing one quality for another.",
+      "expectations": "You will build noticeable muscle across your chest, back, and shoulders. You will get leaner from the conditioning work. You will feel the difference in how you move — more power, more endurance. This is a body you can maintain long-term, not just peak for a few weeks.",
+      "timeline": "10 to 14 weeks to see the full shape. The balance between strength and conditioning work is intentional — do not skip either.",
+      "coachNote": "Batman prepares for every scenario. This program reflects that. Every session has a purpose. Trust the structure."
+    },
+    "coachLines": {
+      "onStart": "Understood. I'll build the path. You just have to walk it.",
+      "onSessionComplete": "Good work. Your future self felt that.",
+      "onPhaseComplete": "Phase done. You are not the same person who started it.",
+      "onPR": "That is a new ceiling. Now we raise the floor.",
+      "onMissedDays": "You are back. That is what matters. Let us not waste it.",
+      "onLevelUp": "The work shows. Keep going.",
+      "onBodyTypeExplain": "Batman sits at 10 to 12 percent body fat — lean enough to see the muscle, not so lean that performance suffers. Broad shoulders, thick back, functional chest. No wasted mass anywhere. This is a body built to perform, and it happens to look exceptional doing it."
+    },
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Foundation",
+        "weeks": 4,
+        "description": "Establish all movement patterns and build base strength. Every major muscle group gets attention. The goal is to create a complete foundation before adding intensity.",
+        "workouts": [
+          {
+            "day": 1,
+            "name": "Push",
+            "exercises": [
+              { "name": "barbell bench press", "sets": 4, "reps": "8-10", "rest": 90 },
+              { "name": "barbell incline bench press", "sets": 3, "reps": "10-12", "rest": 90 },
+              { "name": "dumbbell fly", "sets": 3, "reps": "12-15", "rest": 60 },
+              { "name": "barbell seated overhead press", "sets": 3, "reps": "10-12", "rest": 90 },
+              { "name": "dumbbell lateral raise", "sets": 3, "reps": "15", "rest": 60 }
+            ]
+          },
+          {
+            "day": 2,
+            "name": "Pull",
+            "exercises": [
+              { "name": "pull-up", "sets": 4, "reps": "max", "rest": 120 },
+              { "name": "cable lat pulldown full range of motion", "sets": 3, "reps": "10-12", "rest": 90 },
+              { "name": "cable seated row", "sets": 3, "reps": "10-12", "rest": 90 },
+              { "name": "barbell curl", "sets": 3, "reps": "10-12", "rest": 60 },
+              { "name": "dumbbell hammer curl", "sets": 3, "reps": "12", "rest": 60 }
+            ]
+          },
+          {
+            "day": 3,
+            "name": "Legs + Core",
+            "exercises": [
+              { "name": "barbell squat", "sets": 4, "reps": "8-10", "rest": 120 },
+              { "name": "barbell romanian deadlift", "sets": 3, "reps": "10-12", "rest": 90 },
+              { "name": "lever leg extension", "sets": 3, "reps": "12-15", "rest": 60 },
+              { "name": "inverse leg curl (bench support)", "sets": 3, "reps": "10-12", "rest": 60 },
+              { "name": "hanging knee raise", "sets": 3, "reps": "15", "rest": 60 },
+              { "name": "cable russian twists (on stability ball)", "sets": 3, "reps": "20", "rest": 60 }
+            ]
+          }
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Strength Block",
+        "weeks": 5,
+        "description": "Heavier loads, lower reps. Push the compound lifts. Build the real strength that the Batman physique is built on.",
+        "workouts": [
+          {
+            "day": 1,
+            "name": "Heavy Push",
+            "exercises": [
+              { "name": "barbell bench press", "sets": 5, "reps": "5", "rest": 180 },
+              { "name": "barbell incline bench press", "sets": 4, "reps": "6-8", "rest": 120 },
+              { "name": "dumbbell fly", "sets": 3, "reps": "12", "rest": 60 },
+              { "name": "barbell seated overhead press", "sets": 4, "reps": "6-8", "rest": 120 },
+              { "name": "cable lateral raise", "sets": 3, "reps": "15", "rest": 60 }
+            ]
+          },
+          {
+            "day": 2,
+            "name": "Heavy Pull",
+            "exercises": [
+              { "name": "barbell deadlift", "sets": 4, "reps": "5", "rest": 180 },
+              { "name": "pull-up", "sets": 4, "reps": "8-10", "rest": 120 },
+              { "name": "cable seated row", "sets": 4, "reps": "8-10", "rest": 90 },
+              { "name": "barbell curl", "sets": 3, "reps": "8", "rest": 60 },
+              { "name": "barbell lying triceps extension skull crusher", "sets": 3, "reps": "10", "rest": 60 }
+            ]
+          },
+          {
+            "day": 3,
+            "name": "Heavy Legs",
+            "exercises": [
+              { "name": "barbell squat", "sets": 5, "reps": "5", "rest": 180 },
+              { "name": "barbell romanian deadlift", "sets": 4, "reps": "8", "rest": 120 },
+              { "name": "dumbbell lunge", "sets": 3, "reps": "10 each leg", "rest": 90 },
+              { "name": "lever leg extension", "sets": 3, "reps": "12", "rest": 60 },
+              { "name": "hanging leg raise", "sets": 4, "reps": "12", "rest": 60 }
+            ]
+          }
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Peak Conditioning",
+        "weeks": 4,
+        "description": "Maintain all the strength built in Phase 2 while adding serious conditioning work. This is where the Batman physique locks in — functional, lean, and complete.",
+        "workouts": [
+          {
+            "day": 1,
+            "name": "Full Body A",
+            "exercises": [
+              { "name": "barbell bench press", "sets": 4, "reps": "6", "rest": 120 },
+              { "name": "barbell deadlift", "sets": 3, "reps": "5", "rest": 180 },
+              { "name": "pull-up", "sets": 4, "reps": "max", "rest": 90 },
+              { "name": "dumbbell lateral raise", "sets": 3, "reps": "15", "rest": 60 },
+              { "name": "mountain climber", "sets": 3, "reps": "30 seconds", "rest": 45 }
+            ]
+          },
+          {
+            "day": 2,
+            "name": "Full Body B",
+            "exercises": [
+              { "name": "barbell squat", "sets": 4, "reps": "6", "rest": 120 },
+              { "name": "barbell incline bench press", "sets": 3, "reps": "8", "rest": 120 },
+              { "name": "cable seated row", "sets": 3, "reps": "10", "rest": 90 },
+              { "name": "barbell seated overhead press", "sets": 3, "reps": "8", "rest": 90 },
+              { "name": "burpee", "sets": 3, "reps": "10", "rest": 60 }
+            ]
+          },
+          {
+            "day": 3,
+            "name": "Conditioning",
+            "exercises": [
+              { "name": "jump rope", "sets": 5, "reps": "2 minutes", "rest": 30 },
+              { "name": "wind sprints", "sets": 8, "reps": "20 seconds", "rest": 40 },
+              { "name": "burpee", "sets": 4, "reps": "12", "rest": 45 },
+              { "name": "mountain climber", "sets": 4, "reps": "40 seconds", "rest": 30 },
+              { "name": "hanging leg raise", "sets": 4, "reps": "15", "rest": 60 }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+]

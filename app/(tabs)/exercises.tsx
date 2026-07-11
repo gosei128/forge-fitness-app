@@ -198,7 +198,7 @@ const ExerciseCard = React.memo(
             ) : null}
           </View>
         </View>
-        <View className="bg-secondary/20 p-2.5 rounded-full">
+        <View className="bg-secondary/20 px-3 rounded-full">
           <Text className="text-secondary text-lg font-spaceBold">›</Text>
         </View>
       </Pressable>
