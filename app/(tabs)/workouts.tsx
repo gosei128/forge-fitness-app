@@ -258,6 +258,7 @@ const Workouts = () => {
     exerciseNames: string[],
     restTime: number = 60,
     exerciseUnits?: string[],
+    templateId?: number,
   ) => {
     if (isActive) {
       Alert.alert(
@@ -297,7 +298,7 @@ const Workouts = () => {
       const ids = orderedIds.join(",");
       const unitsList = exerciseUnits ? exerciseUnits.join(",") : "";
 
-      await startSession(templateName, ids, restTime, unitsList);
+      await startSession(templateName, ids, restTime, unitsList, templateId);
       router.push("/(workouts)/active-session");
     } catch (e) {
       console.error("Error starting template:", e);
@@ -592,6 +593,7 @@ const Workouts = () => {
                         template.exercises,
                         template.restTime,
                         template.exerciseUnits,
+                        template.dbId,
                       )
                     }
                     className="bg-secondary active:opacity-90 py-3.5 rounded-2xl items-center justify-center"

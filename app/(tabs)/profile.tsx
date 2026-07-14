@@ -171,7 +171,6 @@ export default function Profile() {
   return (
     <View className="flex-1 bg-primary">
       <Header title="Profile" />
-      <Spacer height={20} />
 
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
         {/* User Card Header */}
@@ -391,7 +390,7 @@ export default function Profile() {
                 <Animated.View
                   key={pr.prId}
                   entering={FadeInUp.delay(450 + index * 50).duration(400)}
-                  className="bg-tertiary border border-neutral-900 rounded-2xl p-4 flex-row justify-between items-center"
+                  className="bg-tertiary border border-neutral-900 rounded-2xl p-4 flex-row mb-2 justify-between items-center"
                 >
                   <View>
                     <Text className="text-white font-spaceBold text-sm capitalize">

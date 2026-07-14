@@ -3,7 +3,15 @@ import { Text, View, Image, ScrollView, Pressable } from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import Header from "../../components/Header";
 import Spacer from "../../components/Spacer";
-import { Flame, Trophy, Dumbbell, Sword } from "lucide-react-native";
+import AnimatedProgressBar from "../../components/AnimatedProgressBar";
+import {
+  Flame,
+  Trophy,
+  Dumbbell,
+  Sword,
+  Space,
+  Check,
+} from "lucide-react-native";
 import { db } from "../../db";
 import { user, userStats } from "../../db/schema";
 import { eq } from "drizzle-orm";
@@ -18,32 +26,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { getMissions, Mission } from "../../lib/missionEngine";
 import { getCoachLine } from "../../lib/coachEngine";
-
-/**
- * Animated Progress Bar for Level Card
- */
-function AnimatedProgressBar({ progress }: { progress: number }) {
-  const animatedWidth = useSharedValue(0);
-
-  useEffect(() => {
-    animatedWidth.value = withTiming(progress, { duration: 1200 });
-  }, [progress]);
-
-  const animatedStyle = useAnimatedStyle(() => {
-    return {
-      width: `${animatedWidth.value * 100}%`,
-    };
-  });
-
-  return (
-    <View className="h-2 w-full bg-primary rounded-full overflow-hidden">
-      <Animated.View
-        style={animatedStyle}
-        className="h-full bg-secondary rounded-full"
-      />
-    </View>
-  );
-}
 
 /**
  * Animated Flame Icon with subtle pulsing
@@ -149,6 +131,7 @@ export default function Index() {
         try {
           // Find first user
           const users = await db.select().from(user).limit(1);
+
           if (users.length > 0) {
             const userId = users[0].id;
             const res = await db
@@ -210,123 +193,127 @@ export default function Index() {
   return (
     <View className="flex-1 bg-primary">
       <Header title="FORGE" />
-      <Spacer height={20} />
 
-      <View className="flex-row items-end bg-tertiary p-2 space-x-3">
-        {/* Character Image Container */}
-        <View className="items-center justify-end">
-          <Image
-            className="relative left-0"
-            source={require("../../assets/images/Sigmale.png")}
-            style={{ height: 130, width: 130 }}
-            resizeMode="contain"
-          />
-        </View>
-
-        {/* Speech Bubble / Dialogue Box */}
-        <View className="flex-1 bg-primary p-4 rounded-2xl rounded-bl-none relative">
-          <Text className="font-spaceBold text-white text-xs uppercase tracking-wider mb-1 opacity-75">
-            Sigma
-          </Text>
-
-          <Text className="font-spaceRegular pl-3 text-white text-sm leading-relaxed">
-            {coachLine}
-          </Text>
-        </View>
-      </View>
-      <Spacer height={20} />
-
-      <ScrollView className="mx-4 flex-1">
+      <ScrollView className=" flex-1">
         {/* Level Stats Card */}
-        <View className="bg-tertiary border border-neutral-900 p-5 rounded-2xl overflow-hidden relative shadow-lg">
-          <View className="flex-row justify-between items-start">
-            <View>
-              <Text className="font-spaceBold text-neutral-500 text-[10px] uppercase tracking-widest">
-                Current Level
-              </Text>
-              <AnimatedLevelNumber level={level} />
-              <View className="flex-row items-center justify-start gap-1.5 mt-2">
-                <Trophy size={14} color="#f3ff47" />
-                <Text className="font-spaceBold text-secondary text-sm">
-                  {rank}
+        <View className="flex-row items-end bg-tertiary/40 p-2 mb-5 space-x-3">
+          {/* Character Image Container */}
+          <View className="items-center justify-end">
+            <Image
+              className="relative left-0"
+              source={require("../../assets/images/Sigmale.png")}
+              style={{ height: 130, width: 130 }}
+              resizeMode="contain"
+            />
+          </View>
+
+          {/* Speech Bubble / Dialogue Box */}
+          <View className="flex-1 bg-primary p-4 rounded-2xl rounded-bl-none relative">
+            <Text className="font-spaceBold text-white text-xs uppercase tracking-wider mb-1 opacity-75">
+              Sigma
+            </Text>
+
+            <Text className="font-spaceRegular pl-3 text-white text-sm leading-relaxed">
+              {coachLine}
+            </Text>
+          </View>
+        </View>
+        <View className="mx-4">
+          <View className="bg-tertiary/40 border border-tertiary/40 p-5 rounded-2xl overflow-hidden relative shadow-lg">
+            <View className="flex-row justify-between items-start">
+              <View>
+                <Text className="font-spaceBold text-neutral-500 text-[10px] uppercase tracking-widest">
+                  Current Level
+                </Text>
+                <AnimatedLevelNumber level={level} />
+                <View className="flex-row items-center justify-start gap-1.5 mt-2">
+                  <Trophy size={14} color="#f3ff47" />
+                  <Text className="font-spaceBold text-secondary text-sm">
+                    {rank}
+                  </Text>
+                </View>
+              </View>
+
+              {/* Streak Pill Badge */}
+              <View className="flex-row items-center bg-primary/60 border border-secondary/20 rounded-full px-3 py-1.5 gap-1.5">
+                <AnimatedFlame />
+                <Text className="font-spaceBold text-xs text-secondary">
+                  {streak} {streak === 1 ? "day" : "days"}
                 </Text>
               </View>
             </View>
 
-            {/* Streak Pill Badge */}
-            <View className="flex-row items-center bg-primary/60 border border-secondary/20 rounded-full px-3 py-1.5 gap-1.5">
-              <AnimatedFlame />
-              <Text className="font-spaceBold text-xs text-secondary">
-                {streak} {streak === 1 ? "day" : "days"}
+            {/* Progress Section */}
+            <Spacer height={24} />
+            <View className="flex-row justify-between items-center mb-1.5">
+              <Text className="font-spaceRegular text-neutral-400 text-xs">
+                {totalXp} XP
+              </Text>
+              <Text className="font-spaceRegular text-neutral-400 text-xs">
+                {maxXp} XP
               </Text>
             </View>
+            <AnimatedProgressBar progress={progress} />
           </View>
 
-          {/* Progress Section */}
-          <Spacer height={24} />
-          <View className="flex-row justify-between items-center mb-1.5">
-            <Text className="font-spaceRegular text-neutral-400 text-xs">
-              {totalXp} XP
-            </Text>
-            <Text className="font-spaceRegular text-neutral-400 text-xs">
-              {maxXp} XP
-            </Text>
-          </View>
-          <AnimatedProgressBar progress={progress} />
-        </View>
-
-        {/* Temporary Onboarding Test Button */}
-        <Spacer height={16} />
-        <Pressable
-          onPress={() => router.push("/onboarding" as any)}
-          className="bg-neutral-900 border border-amber-500/20 py-3.5 rounded-2xl flex-row justify-center items-center gap-2"
-        >
-          <Trophy size={14} color="#f59e0b" />
-          <Text className="font-spaceBold text-amber-500 text-xs tracking-wider uppercase">
-            Test Onboarding Flow
-          </Text>
-        </Pressable>
-
-        {/* Active Missions */}
-        <Spacer height={24} />
-        <View className="flex-row justify-between items-center px-1">
-          <Text className="font-spaceBold text-white text-lg">
-            Active missions
-          </Text>
+          {/* Temporary Onboarding Test Button */}
+          <Spacer height={16} />
           <Pressable
-            onPress={() => router.push("/(tabs)/missions")}
-            className="flex-row items-center gap-1.5"
+            onPress={() => router.push("/onboarding" as any)}
+            className="bg-neutral-900 border border-amber-500/20 py-3.5 rounded-2xl flex-row justify-center items-center gap-2"
           >
-            <Text className="font-spaceBold text-secondary text-xs">
-              View all
+            <Trophy size={14} color="#f59e0b" />
+            <Text className="font-spaceBold text-amber-500 text-xs tracking-wider uppercase">
+              Test Onboarding Flow
             </Text>
           </Pressable>
-        </View>
-        <Spacer height={10} />
 
-        {/* Mission 1 */}
-        {missionList.map((mission) => (
-          <View
-            key={mission.id}
-            className="bg-tertiary border border-neutral-900 rounded-2xl p-4 mb-3 flex-row items-center justify-between"
-          >
-            <View className="flex-1 mr-4">
-              <View className="flex-row items-center gap-3">
-                <View className="bg-neutral-900 p-2.5 rounded-xl border border-neutral-850">
-                  <Sword size={16} color="#f3ff47" />
-                </View>
-                <View className="flex-1">
-                  <Text className="text-white font-spaceBold text-sm mb-1.5">
-                    {mission.description}
-                  </Text>
+          {/* Active Missions */}
+          <Spacer height={24} />
+          <View className="flex-row justify-between items-center px-1">
+            <Text className="font-spaceBold text-white text-lg">
+              Active missions
+            </Text>
+            <Pressable
+              onPress={() => router.push("/(tabs)/missions")}
+              className="flex-row items-center gap-1.5"
+            >
+              <Text className="font-spaceBold text-secondary text-xs">
+                View all
+              </Text>
+            </Pressable>
+          </View>
+          <Spacer height={10} />
+
+          {/* Mission 1 */}
+          {missionList.map((mission) => (
+            <View
+              key={mission.id}
+              className={`${mission.completedAt ? "bg-tertiary/40" : "bg-tertiary/80"} border rounded-2xl p-4 mb-3 flex-row items-center justify-between`}
+            >
+              <View className="flex-1 mr-4">
+                <View className="flex-row items-center gap-3">
+                  <View className="bg-neutral-900 p-2.5 rounded-xl border border-neutral-850">
+                    {mission.completedAt ? (
+                      <Check size={16} color="#f3ff47" />
+                    ) : (
+                      <Sword size={16} color="#f3ff47" />
+                    )}
+                  </View>
+                  <View className="flex-1">
+                    <Text className="text-white font-spaceBold text-sm mb-1.5">
+                      {mission.description}
+                    </Text>
+                  </View>
                 </View>
               </View>
+              <Text className="text-secondary font-spaceBold text-xs">
+                {mission.xpReward} XP
+              </Text>
             </View>
-            <Text className="text-secondary font-spaceBold text-xs">
-              {mission.xpReward} XP
-            </Text>
-          </View>
-        ))}
+          ))}
+        </View>
+        <Spacer height={100} />
       </ScrollView>
     </View>
   );

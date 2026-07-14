@@ -246,7 +246,7 @@ function TabButton({
       >
         <IconComponent
           name={iconName}
-          size={20}
+          size={15}
           color={isFocused ? "#ffffff" : "#a1a1aa"}
         />
       </Animated.View>

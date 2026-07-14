@@ -17,6 +17,7 @@ import {
   workoutSessions,
   sets,
   exercises as dbExercises,
+  templateExercises,
 } from "../db/schema";
 import { eq, desc, inArray, and } from "drizzle-orm";
 import { completeWorkoutSession } from "../lib/sessionCompletion";
@@ -54,13 +55,14 @@ interface WorkoutSessionContextType {
     exerciseIds?: string,
     defaultRestDuration?: number,
     exerciseUnitsList?: string,
+    templateId?: number,
   ) => Promise<void>;
   collapseSession: () => void;
   expandSession: () => void;
   finishSession: () => Promise<void>;
   cancelSession: () => void;
   setSessionName: (name: string) => void;
-  addExercise: (exercise: any, unit?: string) => void;
+  addExercise: (exercise: any, unit?: string) => Promise<void>;
   removeExercise: (exerciseId: number) => void;
   addSet: (exerciseId: number) => void;
   updateSet: (
@@ -168,6 +170,7 @@ export const WorkoutSessionProvider: React.FC<{
     exerciseIds?: string,
     defaultRestDuration?: number,
     exerciseUnitsList?: string,
+    templateId?: number,
   ) => {
     setStartTime(new Date());
     setElapsedTime(0);
@@ -189,7 +192,136 @@ export const WorkoutSessionProvider: React.FC<{
       setSessionNameState(timeOfDay);
     }
 
-    if (exerciseIds) {
+    if (templateId) {
+      try {
+        const results = await db
+          .select({
+            templateExerciseId: templateExercises.id,
+            exerciseId: dbExercises.id,
+            name: dbExercises.name,
+            muscleGroup: dbExercises.muscleGroup,
+            equipment: dbExercises.equipment,
+            category: dbExercises.category,
+            instructions: dbExercises.instructions,
+            weightUnit: templateExercises.weightUnit,
+            defaultSets: templateExercises.defaultSets,
+            orderNumber: templateExercises.orderNumber,
+          })
+          .from(templateExercises)
+          .innerJoin(dbExercises, eq(templateExercises.exerciseId, dbExercises.id))
+          .where(eq(templateExercises.templateId, templateId))
+          .orderBy(templateExercises.orderNumber);
+
+        const loadedList: SelectedExercise[] = [];
+
+        for (const row of results) {
+          const id = row.exerciseId;
+
+          // Parse template defaultSets
+          let templateSets: any[] = [];
+          if (row.defaultSets) {
+            try {
+              const parsed = JSON.parse(row.defaultSets);
+              if (Array.isArray(parsed)) {
+                templateSets = parsed;
+              }
+            } catch (e) {
+              console.error("Failed to parse template defaultSets", e);
+            }
+          }
+
+          // Find the most recent session that logged this exercise for this user
+          const lastSetRow = await db
+            .select({ sessionId: sets.sessionId })
+            .from(sets)
+            .innerJoin(workoutSessions, eq(sets.sessionId, workoutSessions.id))
+            .where(
+              and(
+                eq(sets.exerciseId, id),
+                eq(workoutSessions.userId, userIdVal),
+              ),
+            )
+            .orderBy(desc(sets.id))
+            .limit(1);
+
+          let prevSets: any[] = [];
+          if (lastSetRow.length > 0) {
+            prevSets = await db
+              .select()
+              .from(sets)
+              .where(
+                and(
+                  eq(sets.exerciseId, id),
+                  eq(sets.sessionId, lastSetRow[0].sessionId),
+                ),
+              )
+              .orderBy(sets.setNumber);
+          }
+
+          let initialSets: LoggedSet[] = [];
+
+          if (templateSets.length > 0) {
+            initialSets = templateSets.map((ts, index): LoggedSet => {
+              const prevSet = prevSets[index];
+
+              let weight = "";
+              if (prevSet && prevSet.weight !== undefined) {
+                weight = prevSet.weight.toString();
+              } else if (ts.weight) {
+                weight = ts.weight.toString();
+              }
+
+              let reps = "";
+              if (ts.reps) {
+                reps = ts.reps.toString();
+              } else if (prevSet && prevSet.reps !== undefined) {
+                reps = prevSet.reps.toString();
+              }
+
+              return {
+                id: Date.now() + index + Math.random(),
+                weight,
+                reps,
+                isCompleted: false,
+              };
+            });
+          } else if (prevSets.length > 0) {
+            initialSets = prevSets.map(
+              (ps, index): LoggedSet => ({
+                id: Date.now() + index + Math.random(),
+                weight: ps.weight.toString(),
+                reps: ps.reps.toString(),
+                isCompleted: false,
+              }),
+            );
+          } else {
+            initialSets = [
+              {
+                id: Date.now() + Math.random(),
+                weight: "",
+                reps: "",
+                isCompleted: false,
+              },
+            ];
+          }
+
+          loadedList.push({
+            id: row.exerciseId,
+            name: row.name || "",
+            muscleGroup: row.muscleGroup || "",
+            equipment: row.equipment,
+            category: row.category,
+            instructions: row.instructions,
+            weightUnit: row.weightUnit || "lbs",
+            sets: initialSets,
+          });
+        }
+
+        setSelectedExercises(loadedList);
+      } catch (e) {
+        console.error("Error preloading template exercises in context:", e);
+      }
+    } else if (exerciseIds) {
       const ids = exerciseIds.split(",").map(Number).filter(Boolean);
       const units = exerciseUnitsList ? exerciseUnitsList.split(",") : [];
 
@@ -220,7 +352,7 @@ export const WorkoutSessionProvider: React.FC<{
                   eq(workoutSessions.userId, userIdVal),
                 ),
               )
-              .orderBy(desc(sets.createdAt))
+              .orderBy(desc(sets.id))
               .limit(1);
 
             let initialSets: LoggedSet[] = [];
@@ -439,7 +571,59 @@ export const WorkoutSessionProvider: React.FC<{
     );
   };
 
-  const addExercise = (exercise: any, unit: string = "lbs") => {
+  const addExercise = async (exercise: any, unit: string = "lbs") => {
+    const userIdVal = await ensureUser();
+
+    // Find the most recent session that logged this exercise for this user
+    const lastSetRow = await db
+      .select({ sessionId: sets.sessionId })
+      .from(sets)
+      .innerJoin(workoutSessions, eq(sets.sessionId, workoutSessions.id))
+      .where(
+        and(
+          eq(sets.exerciseId, exercise.id),
+          eq(workoutSessions.userId, userIdVal),
+        ),
+      )
+      .orderBy(desc(sets.id))
+      .limit(1);
+
+    let initialSets: LoggedSet[] = [];
+
+    if (lastSetRow.length > 0) {
+      const prevSets = await db
+        .select()
+        .from(sets)
+        .where(
+          and(
+            eq(sets.exerciseId, exercise.id),
+            eq(sets.sessionId, lastSetRow[0].sessionId),
+          ),
+        )
+        .orderBy(sets.setNumber);
+
+      // Pre-fill previous weights & reps — not marked completed
+      initialSets = prevSets.map(
+        (ps): LoggedSet => ({
+          id: Date.now() + Math.random(),
+          weight: ps.weight.toString(),
+          reps: ps.reps.toString(),
+          isCompleted: false,
+        }),
+      );
+    }
+
+    if (initialSets.length === 0) {
+      initialSets = [
+        {
+          id: Date.now() + Math.random(),
+          weight: "",
+          reps: "",
+          isCompleted: false,
+        },
+      ];
+    }
+
     setSelectedExercises((prev) => {
       // Check if exercise is already added
       if (prev.some((ex) => ex.id === exercise.id)) {
@@ -454,7 +638,7 @@ export const WorkoutSessionProvider: React.FC<{
         {
           ...exercise,
           weightUnit: unit,
-          sets: [{ id: Date.now(), weight: "", reps: "", isCompleted: false }],
+          sets: initialSets,
         },
       ];
     });

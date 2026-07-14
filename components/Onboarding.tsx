@@ -232,9 +232,9 @@ function CharacterOverlay({
 
 // ─── Main Onboarding ─────────────────────────────────────────
 export default function Onboarding({ onComplete }: OnboardingProps) {
-  const [phase, setPhase] = useState<"splash" | "form" | "character_select">(
-    "splash",
-  );
+  const [phase, setPhase] = useState<
+    "splash" | "form" | "character_select" | "last_phase"
+  >("splash");
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [saving, setSaving] = useState(false);
@@ -258,6 +258,34 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
   const logoAnimatedStyle = useAnimatedStyle(() => ({
     transform: [{ scale: logoScale.value }],
   }));
+
+  // ── Last Phase Timer & Pulse ──
+  const pulseValue = useSharedValue(1);
+  useEffect(() => {
+    if (phase === "last_phase") {
+      pulseValue.value = withRepeat(
+        withSequence(
+          withTiming(1.15, { duration: 800 }),
+          withTiming(1.0, { duration: 800 }),
+        ),
+        -1,
+        true,
+      );
+    }
+  }, [phase]);
+
+  const pulseAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseValue.value }],
+  }));
+
+  useEffect(() => {
+    if (phase === "last_phase") {
+      const timer = setTimeout(() => {
+        onComplete();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [phase, onComplete]);
 
   // ── Carousel gesture ──
   const scrollOffset = useSharedValue(0);
@@ -380,6 +408,39 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
     );
   }
 
+  if (phase === "last_phase") {
+    return (
+      <Animated.View
+        entering={FadeIn.duration(400)}
+        exiting={FadeOut.duration(400)}
+        className="flex-1 bg-primary justify-center items-center px-6"
+      >
+        <Animated.View style={pulseAnimatedStyle} className="mb-8 items-center">
+          <View className="bg-secondary/10 border-2 border-secondary p-6 rounded-full">
+            <Flame color="#f3ff47" fill="#f3ff47" size={64} />
+          </View>
+        </Animated.View>
+
+        <Animated.Text
+          entering={FadeInDown.delay(200).duration(500)}
+          className="text-white font-spaceBold text-4xl text-center mb-10 tracking-wide"
+        >
+          You are all set
+        </Animated.Text>
+
+        <Animated.View
+          entering={FadeInDown.delay(400).duration(500)}
+          className="items-center justify-center"
+        >
+          <ActivityIndicator size="large" color="#f3ff47" />
+          <Text className="text-neutral-400 font-spaceBold text-xs uppercase tracking-[0.2em] mt-4">
+            Loading
+          </Text>
+        </Animated.View>
+      </Animated.View>
+    );
+  }
+
   // ─── CHARACTER SELECT PHASE ──────────────────────────────────
   const activeArchetype = archetypes[activeIndex];
   const activeCharacterImage = activeArchetype?.characterImage
@@ -447,7 +508,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
                 } catch (err) {
                   console.error("Error saving selected archetype direct:", err);
                 }
-                onComplete();
+                setPhase("last_phase");
               }
             }}
             className="bg-secondary py-4 rounded-2xl items-center justify-center shadow-lg mb-2"
@@ -458,7 +519,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           </Pressable>
 
           <Pressable
-            onPress={() => onComplete()}
+            onPress={() => setPhase("last_phase")}
             className="py-4 items-center justify-center"
           >
             <Text className="text-neutral-500 font-spaceBold text-sm uppercase tracking-wider">

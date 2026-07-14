@@ -1,11 +1,20 @@
 import { StyleSheet, Text, View } from "react-native";
 import React, { useEffect } from "react";
+import {
+  configureReanimatedLogger,
+  ReanimatedLogLevel,
+} from "react-native-reanimated";
 import migration from "../drizzle/migrations";
 import { db } from "../db";
 import { useMigrations } from "drizzle-orm/expo-sqlite/migrator";
 import { Stack, router } from "expo-router";
 import "../global.css";
 import { exercises, user } from "../db/schema";
+
+configureReanimatedLogger({
+  level: ReanimatedLogLevel.warn,
+  strict: false,
+});
 import { useFonts } from "expo-font";
 import * as SplashScreen from "expo-splash-screen";
 import { seedExercises, seedRanks } from "../db/seed";
