@@ -64,7 +64,7 @@ function AccordionCard({
   return (
     <Pressable
       onPress={onPress}
-      className={`bg-[#1a1a1e] border border-neutral-900 p-4 rounded-2xl ${isLast ? "mb-6" : "mb-3"}`}
+      className={`bg-tertiary/40 border border-white/5 p-4 rounded-2xl ${isLast ? "mb-6" : "mb-3"}`}
     >
       <View className="flex-row justify-between items-center">
         <Text className="text-white font-spaceBold text-sm">{title}</Text>
@@ -254,7 +254,7 @@ export default function CharacterDetail() {
           Target Metrics
         </Text>
         <View className="flex-row justify-between gap-3 mb-6">
-          <View className="flex-1 bg-neutral-900 border border-neutral-850 p-4 rounded-2xl items-center justify-center">
+          <View className="flex-1 bg-tertiary/40 border border-white/5 p-4 rounded-2xl items-center justify-center">
             <Target color="#fba613" size={16} className="mb-2" />
             <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">
               Body Fat
@@ -263,7 +263,7 @@ export default function CharacterDetail() {
               {item.targets.bodyFat}
             </Text>
           </View>
-          <View className="flex-1 bg-neutral-900 border border-neutral-850 p-4 rounded-2xl items-center justify-center">
+          <View className="flex-1 bg-tertiary/40 border border-white/5 p-4 rounded-2xl items-center justify-center">
             <Trophy color="#fba613" size={16} className="mb-2" />
             <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">
               Strength
@@ -272,7 +272,7 @@ export default function CharacterDetail() {
               {getStrengthTarget(item.targets)}
             </Text>
           </View>
-          <View className="flex-1 bg-neutral-900 border border-neutral-850 p-4 rounded-2xl items-center justify-center">
+          <View className="flex-1 bg-tertiary/40 border border-white/5 p-4 rounded-2xl items-center justify-center">
             <Dumbbell color="#fba613" size={16} className="mb-2" />
             <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">
               Primary Focus
@@ -322,7 +322,7 @@ export default function CharacterDetail() {
           {item.phases.map((phase: any) => (
             <View
               key={phase.phase}
-              className="bg-tertiary/40 border border-neutral-900 p-5 rounded-3xl"
+              className="bg-tertiary/40 border border-white/5 p-5 rounded-3xl"
             >
               <View className="flex-row justify-between items-center mb-2">
                 <Text className="text-secondary font-spaceBold text-sm">

@@ -199,7 +199,7 @@ export default function Profile() {
           {/* Level */}
           <Animated.View
             entering={FadeInUp.delay(100).duration(400)}
-            className="flex-1 bg-tertiary border border-neutral-900 rounded-2xl py-4 items-center"
+            className="flex-1 bg-tertiary/40 border border-white/5 rounded-2xl py-4 items-center"
           >
             <Text className="text-white font-spaceBold text-xl mb-1">
               {level}
@@ -211,7 +211,7 @@ export default function Profile() {
           {/* Day streak */}
           <Animated.View
             entering={FadeInUp.delay(150).duration(400)}
-            className="flex-1 bg-tertiary border border-neutral-900 rounded-2xl py-4 items-center"
+            className="flex-1 bg-tertiary/40 border border-white/5 rounded-2xl py-4 items-center"
           >
             <Text className="text-white font-spaceBold text-xl mb-1">
               {streak}
@@ -223,7 +223,7 @@ export default function Profile() {
           {/* Sessions */}
           <Animated.View
             entering={FadeInUp.delay(200).duration(400)}
-            className="flex-1 bg-tertiary border border-neutral-900 rounded-2xl py-4 items-center"
+            className="flex-1 bg-tertiary/40 border border-white/5 rounded-2xl py-4 items-center"
           >
             <Text className="text-white font-spaceBold text-xl mb-1">
               {sessionsCount}
@@ -235,7 +235,7 @@ export default function Profile() {
           {/* Total XP */}
           <Animated.View
             entering={FadeInUp.delay(250).duration(400)}
-            className="flex-1 bg-tertiary border border-neutral-900 rounded-2xl py-4 items-center"
+            className="flex-1 bg-tertiary/40 border border-white/5 rounded-2xl py-4 items-center"
           >
             <Text className="text-white font-spaceBold text-xl mb-1">
               {formatXP(totalXp)}
@@ -263,7 +263,7 @@ export default function Profile() {
               </Pressable>
             </View>
 
-            <View className="bg-tertiary border border-neutral-900 rounded-3xl p-5 relative">
+            <View className="bg-tertiary/40 border border-white/5 rounded-3xl p-5 relative">
               <View className="absolute top-5 right-5 bg-secondary/10 border border-secondary/35 rounded-full px-2 py-0.5">
                 <Text className="text-secondary font-spaceBold text-[10px]">
                   In progress
@@ -341,7 +341,7 @@ export default function Profile() {
               </Text>
             </View>
 
-            <View className="bg-tertiary border border-neutral-900 border-dashed rounded-3xl p-6 items-center justify-center">
+            <View className="bg-tertiary/40 border border-neutral-900 border-dashed rounded-3xl p-6 items-center justify-center">
               <Text className="text-white font-spaceBold text-base mb-1">
                 Choose Your Goal
               </Text>
@@ -378,7 +378,7 @@ export default function Profile() {
           </View>
 
           {prList.length === 0 ? (
-            <View className="bg-tertiary border border-neutral-900 border-dashed rounded-3xl p-8 items-center justify-center">
+            <View className="bg-tertiary/40 border border-white/5 border-dashed rounded-3xl p-8 items-center justify-center">
               <Text className="text-neutral-500 font-spaceRegular text-sm text-center">
                 No personal records logged yet. Complete a workout to set new
                 PRs!
@@ -390,7 +390,7 @@ export default function Profile() {
                 <Animated.View
                   key={pr.prId}
                   entering={FadeInUp.delay(450 + index * 50).duration(400)}
-                  className="bg-tertiary border border-neutral-900 rounded-2xl p-4 flex-row mb-2 justify-between items-center"
+                  className="bg-tertiary/40 border border-white/5 rounded-2xl p-4 flex-row mb-2 justify-between items-center"
                 >
                   <View>
                     <Text className="text-white font-spaceBold text-sm capitalize">

@@ -305,11 +305,11 @@ function TrainButton({ trainRoute, isFocused, navigation }: TrainButtonProps) {
     <Animated.View style={[animatedTrainStyle, { overflow: "hidden" }]}>
       <Pressable
         onPress={onPress}
-        className="rounded-full py-3.5 flex-row items-center justify-center space-x-2 border bg-[#f3ff47] border-[#f3ff47] w-full"
+        className="rounded-full py-3.5 flex-row items-center justify-center space-x-2 border bg-secondary border-secondary w-full"
         style={{ paddingHorizontal: 10 }}
       >
         <Text
-          className="font-spaceBold text-sm tracking-wide text-black"
+          className="font-spaceBold text-sm tracking-wide text-tertiary"
           numberOfLines={1}
         >
           Go Train

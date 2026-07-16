@@ -11,8 +11,8 @@ module.exports = {
         extend: {
             colors: {
                 primary: "#131316",
-                secondary: "#f3ff47",
-                tertiary: "#2b2b2b",
+                secondary: "#CAFE20",
+                tertiary: "#323031",
             },
             fontFamily: {
                 sans: ["SpaceGrotesk-Regular"],

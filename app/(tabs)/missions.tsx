@@ -210,8 +210,8 @@ export default function MissionsScreen() {
                   entering={FadeInDown.delay(index * 100).duration(400)}
                   className={`p-5 rounded-3xl mb-4 border ${
                     isCompleted
-                      ? "bg-secondary/5 border-secondary/20"
-                      : "bg-tertiary/60 border-white/5"
+                      ? "bg-primary border-tertiary"
+                      : "bg-tertiary/40 border-white/5"
                   }`}
                 >
                   <View className="flex-row justify-between items-start">
@@ -256,7 +256,7 @@ export default function MissionsScreen() {
                   {/* Progress Indicator */}
                   <View className="mt-4 flex-row justify-between items-center">
                     <Text className="font-spaceMedium text-neutral-500 text-xs uppercase tracking-wider">
-                      Progress
+                      {isCompleted ? "Done" : "Progress"}
                     </Text>
                     <Text className="font-spaceBold text-neutral-300 text-xs">
                       {mission.currentValue} / {mission.targetValue}
