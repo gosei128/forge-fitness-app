@@ -217,7 +217,7 @@ export default function Index() {
             </View>
 
             {/* Speech Bubble / Dialogue Box */}
-            <View className="flex-1 bg-primary p-4 rounded-2xl relative">
+            <View className="flex-1 bg-primary p-4  rounded-2xl rounded-bl-none relative">
               <Text className="font-spaceBold text-white text-xs uppercase tracking-wider mb-1 opacity-75">
                 Sigma
               </Text>
@@ -298,7 +298,7 @@ export default function Index() {
             {missionList.map((mission) => (
               <View
                 key={mission.id}
-                className={`${mission.completedAt ? "bg-tertiary/10 border-white/5" : "bg-tertiary/40"} border rounded-2xl p-4 mb-3 flex-row items-center justify-between`}
+                className={`${mission.completedAt ? "bg-tertiary/10 border-white/5" : "bg-tertiary/40 border-white/5"} border rounded-2xl p-4 mb-3 flex-row items-center justify-between`}
               >
                 <View className="flex-1 mr-4">
                   <View className="flex-row items-center gap-3">

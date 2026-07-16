@@ -408,6 +408,8 @@ export default function Profile() {
             </View>
           )}
         </Animated.View>
+
+        <Spacer height={40} />
       </ScrollView>
     </View>
   );

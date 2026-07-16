@@ -1,4 +1,27 @@
 import React, { useState, useEffect } from "react";
+
+// ─── Types ────────────────────────────────────────────────────
+interface Exercise {
+  name: string;
+  sets: number;
+  reps: string;
+  rest: number;
+}
+
+interface Workout {
+  day: number;
+  name: string;
+  exercises: Exercise[];
+}
+
+interface Phase {
+  phase: number;
+  name: string;
+  weeks: number;
+  description: string;
+  workouts: Workout[];
+}
+
 import {
   View,
   Text,
@@ -13,22 +36,23 @@ import {
   ChevronLeft,
   ChevronDown,
   ChevronUp,
+  ChevronRight,
   Trophy,
   Target,
   Dumbbell,
 } from "lucide-react-native";
 import { db } from "../../db";
-import { user, userStats } from "../../db/schema";
-import { eq } from "drizzle-orm";
+import { user } from "../../db/schema";
 import { getArchetype, selectArchetype } from "../../lib/archetypes";
 import Spacer from "../../components/Spacer";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
+  runOnJS,
 } from "react-native-reanimated";
 
-// ─── Accordion Card component ────────────────────────────────
+// ─── Accordion Card ────────────────────────────────────────────
 function AccordionCard({
   title,
   content,
@@ -55,10 +79,7 @@ function AccordionCard({
 
   const animatedStyle = useAnimatedStyle(() => {
     const opacity = contentHeight > 0 ? heightVal.value / contentHeight : 0;
-    return {
-      height: heightVal.value,
-      opacity: opacity,
-    };
+    return { height: heightVal.value, opacity };
   });
 
   return (
@@ -75,19 +96,11 @@ function AccordionCard({
         )}
       </View>
 
-      {/* Hidden layout measurement container (absolute, off-screen horizontal bounds) */}
+      {/* Hidden measurement container */}
       <View
         pointerEvents="none"
-        style={{
-          position: "absolute",
-          opacity: 0,
-          left: 16,
-          right: 16,
-          top: 0,
-        }}
-        onLayout={(e) => {
-          setContentHeight(e.nativeEvent.layout.height);
-        }}
+        style={{ position: "absolute", opacity: 0, left: 16, right: 16, top: 0 }}
+        onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
       >
         <View className="mt-3 border-t border-neutral-900/60 pt-3">
           <Text className="text-neutral-400 font-spaceRegular text-xs leading-relaxed">
@@ -96,7 +109,6 @@ function AccordionCard({
         </View>
       </View>
 
-      {/* Animated container */}
       <Animated.View style={[{ overflow: "hidden" }, animatedStyle]}>
         <View className="mt-3 border-t border-neutral-900/60 pt-3">
           <Text className="text-neutral-400 font-spaceRegular text-xs leading-relaxed">
@@ -108,6 +120,152 @@ function AccordionCard({
   );
 }
 
+// ─── Workout Carousel ──────────────────────────────────────────
+// Isolated dayIndex state per phase — navigation is independent across phases.
+function WorkoutCarousel({ workouts }: { workouts: Workout[] }) {
+  const [dayIndex, setDayIndex] = useState(0);
+  const workout = workouts[dayIndex];
+
+  // Guard against empty workouts array
+  if (!workout) return null;
+
+  const opacity = useSharedValue(1);
+  const translateX = useSharedValue(0);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateX: translateX.value }],
+  }));
+
+  const navigate = (direction: "prev" | "next") => {
+    // Pre-compute as a plain number — runOnJS cannot serialize a function argument
+    const newIndex =
+      direction === "next"
+        ? Math.min(workouts.length - 1, dayIndex + 1)
+        : Math.max(0, dayIndex - 1);
+
+    const outX = direction === "next" ? -12 : 12;
+    const inX = direction === "next" ? 12 : -12;
+
+    // Fade + slide out
+    opacity.value = withTiming(0, { duration: 100 });
+    translateX.value = withTiming(outX, { duration: 100 }, () => {
+      // Swap content at the invisible frame (newIndex is a plain number — safe to pass)
+      runOnJS(setDayIndex)(newIndex);
+      // Snap to opposite side then fade + slide in
+      translateX.value = inX;
+      opacity.value = withTiming(1, { duration: 150 });
+      translateX.value = withTiming(0, { duration: 150 });
+    });
+  };
+
+  const goBack = () => { if (dayIndex > 0) navigate("prev"); };
+  const goNext = () => { if (dayIndex < workouts.length - 1) navigate("next"); };
+
+  const isFirst = dayIndex === 0;
+  const isLast = dayIndex === workouts.length - 1;
+
+  return (
+    <View className="mt-4 border-t border-white/5 pt-4">
+      {/* Day navigator row */}
+      <View className="flex-row items-center justify-between mb-3">
+        <Pressable
+          onPress={goBack}
+          disabled={isFirst}
+          className={`p-1.5 rounded-full border ${
+            isFirst
+              ? "border-white/5 opacity-30"
+              : "border-secondary/40 bg-secondary/10"
+          }`}
+        >
+          <ChevronLeft color={isFirst ? "#555" : "#fba613"} size={14} />
+        </Pressable>
+
+        <View className="items-center flex-1 mx-3">
+          <Text className="text-white font-spaceBold text-xs text-center">
+            Day {workout.day} — {workout.name}
+          </Text>
+          {/* Pill dot indicators */}
+          <View className="flex-row gap-1 mt-1.5">
+            {workouts.map((_, i) => (
+              <View
+                key={i}
+                style={{
+                  width: i === dayIndex ? 14 : 5,
+                  height: 5,
+                  borderRadius: 3,
+                  backgroundColor: i === dayIndex ? "#fba613" : "#333",
+                }}
+              />
+            ))}
+          </View>
+        </View>
+
+        <Pressable
+          onPress={goNext}
+          disabled={isLast}
+          className={`p-1.5 rounded-full border ${
+            isLast
+              ? "border-white/5 opacity-30"
+              : "border-secondary/40 bg-secondary/10"
+          }`}
+        >
+          <ChevronRight color={isLast ? "#555" : "#fba613"} size={14} />
+        </Pressable>
+      </View>
+
+      {/* Animated exercise table */}
+      <Animated.View
+        style={animatedStyle}
+        className="bg-primary/40 rounded-2xl overflow-hidden border border-white/5"
+      >
+        {/* Table header */}
+        <View className="flex-row px-4 py-2.5 border-b border-white/5">
+          <Text className="flex-1 text-neutral-500 font-spaceBold text-[9px] uppercase tracking-wider">
+            Exercise
+          </Text>
+          <Text className="w-10 text-center text-neutral-500 font-spaceBold text-[9px] uppercase tracking-wider">
+            Sets
+          </Text>
+          <Text className="w-14 text-center text-neutral-500 font-spaceBold text-[9px] uppercase tracking-wider">
+            Reps
+          </Text>
+          <Text className="w-10 text-right text-neutral-500 font-spaceBold text-[9px] uppercase tracking-wider">
+            Rest
+          </Text>
+        </View>
+
+        {/* Exercise rows */}
+        {workout.exercises.map((ex: Exercise, idx: number) => (
+          <View
+            key={idx}
+            className={`flex-row items-center px-4 py-3 ${
+              idx < workout.exercises.length - 1 ? "border-b border-white/5" : ""
+            }`}
+          >
+            <Text
+              className="flex-1 text-white font-spaceRegular text-xs capitalize"
+              numberOfLines={1}
+            >
+              {ex.name}
+            </Text>
+            <Text className="w-10 text-center text-secondary font-spaceBold text-xs">
+              {ex.sets}
+            </Text>
+            <Text className="w-14 text-center text-neutral-300 font-spaceRegular text-xs">
+              {ex.reps}
+            </Text>
+            <Text className="w-10 text-right text-neutral-500 font-spaceRegular text-xs">
+              {ex.rest}s
+            </Text>
+          </View>
+        ))}
+      </Animated.View>
+    </View>
+  );
+}
+
+// ─── Main Screen ───────────────────────────────────────────────
 export default function CharacterDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
@@ -120,9 +278,7 @@ export default function CharacterDetail() {
     async function loadUser() {
       try {
         const users = await db.select().from(user).limit(1);
-        if (users.length > 0) {
-          setUserId(users[0].id);
-        }
+        if (users.length > 0) setUserId(users[0].id);
       } catch (e) {
         console.error("Error loading user in detail screen:", e);
       } finally {
@@ -139,29 +295,13 @@ export default function CharacterDetail() {
   const getDifficultyColor = (diff: string) => {
     switch (diff.toLowerCase()) {
       case "beginner":
-        return {
-          text: "text-green-400",
-          bg: "bg-green-400/10",
-          border: "border-green-400/20",
-        };
+        return { text: "text-green-400", bg: "bg-green-400/10", border: "border-green-400/20" };
       case "intermediate":
-        return {
-          text: "text-amber-400",
-          bg: "bg-amber-400/10",
-          border: "border-amber-400/20",
-        };
+        return { text: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20" };
       case "advanced":
-        return {
-          text: "text-red-400",
-          bg: "bg-red-400/10",
-          border: "border-red-400/20",
-        };
+        return { text: "text-red-400", bg: "bg-red-400/10", border: "border-red-400/20" };
       default:
-        return {
-          text: "text-neutral-400",
-          bg: "bg-neutral-400/10",
-          border: "border-neutral-400/20",
-        };
+        return { text: "text-neutral-400", bg: "bg-neutral-400/10", border: "border-neutral-400/20" };
     }
   };
 
@@ -176,7 +316,6 @@ export default function CharacterDetail() {
     if (!userId || !item) return;
     try {
       await selectArchetype(userId, item.id);
-      // Navigate to dashboard
       router.replace("/(tabs)");
     } catch (e) {
       console.error("Error starting program:", e);
@@ -195,7 +334,7 @@ export default function CharacterDetail() {
 
   return (
     <SafeAreaView className="flex-1 bg-primary">
-      {/* Header back button */}
+      {/* Header */}
       <View className="px-5 py-4 flex-row items-center">
         <Pressable
           onPress={() => router.back()}
@@ -203,27 +342,17 @@ export default function CharacterDetail() {
         >
           <ChevronLeft color="#fff" size={20} />
         </Pressable>
-        <Text className="text-white font-spaceBold text-lg ml-4">
-          Physique Program
-        </Text>
+        <Text className="text-white font-spaceBold text-lg ml-4">Physique Program</Text>
       </View>
 
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
-        {/* Top Header Section */}
+        {/* Character header */}
         <View className="mt-4 mb-6">
-          <Text className="text-white font-spaceBold text-4xl mb-1">
-            {item.character}
-          </Text>
+          <Text className="text-white font-spaceBold text-4xl mb-1">{item.character}</Text>
           <View className="flex-row items-center gap-3 mt-1.5 mb-3.5">
-            <Text className="text-neutral-400 font-spaceMedium text-sm">
-              {item.archetype}
-            </Text>
-            <View
-              className={`px-2 py-0.5 rounded-full border ${diffColors.bg} ${diffColors.border}`}
-            >
-              <Text
-                className={`font-spaceBold text-[9px] uppercase tracking-wider ${diffColors.text}`}
-              >
+            <Text className="text-neutral-400 font-spaceMedium text-sm">{item.archetype}</Text>
+            <View className={`px-2 py-0.5 rounded-full border ${diffColors.bg} ${diffColors.border}`}>
+              <Text className={`font-spaceBold text-[9px] uppercase tracking-wider ${diffColors.text}`}>
                 {item.difficulty}
               </Text>
             </View>
@@ -249,63 +378,44 @@ export default function CharacterDetail() {
           </View>
         </View>
 
-        {/* Targets Section */}
-        <Text className="text-white font-spaceBold text-lg mb-3">
-          Target Metrics
-        </Text>
+        {/* Target Metrics */}
+        <Text className="text-white font-spaceBold text-lg mb-3">Target Metrics</Text>
         <View className="flex-row justify-between gap-3 mb-6">
           <View className="flex-1 bg-tertiary/40 border border-white/5 p-4 rounded-2xl items-center justify-center">
             <Target color="#fba613" size={16} className="mb-2" />
-            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">
-              Body Fat
-            </Text>
-            <Text className="text-white font-spaceBold text-sm text-center">
-              {item.targets.bodyFat}
-            </Text>
+            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">Body Fat</Text>
+            <Text className="text-white font-spaceBold text-sm text-center">{item.targets.bodyFat}</Text>
           </View>
           <View className="flex-1 bg-tertiary/40 border border-white/5 p-4 rounded-2xl items-center justify-center">
             <Trophy color="#fba613" size={16} className="mb-2" />
-            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">
-              Strength
-            </Text>
+            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">Strength</Text>
             <Text className="text-white font-spaceBold text-sm text-center">
               {getStrengthTarget(item.targets)}
             </Text>
           </View>
           <View className="flex-1 bg-tertiary/40 border border-white/5 p-4 rounded-2xl items-center justify-center">
             <Dumbbell color="#fba613" size={16} className="mb-2" />
-            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">
-              Primary Focus
-            </Text>
-            <Text
-              className="text-white font-spaceBold text-[10px] text-center"
-              numberOfLines={2}
-            >
+            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">Focus</Text>
+            <Text className="text-white font-spaceBold text-[10px] text-center" numberOfLines={2}>
               {item.targets.focus}
             </Text>
           </View>
         </View>
 
-        {/* Body Type Discussion Section */}
-        <Text className="text-white font-spaceBold text-lg mb-3">
-          Program Discussion
-        </Text>
-
-        {/* Program Discussion Accordions */}
+        {/* Program Discussion */}
+        <Text className="text-white font-spaceBold text-lg mb-3">Program Discussion</Text>
         <AccordionCard
           title="What to expect"
           content={item.bodyTypeDiscussion.expectations}
           isExpanded={expandedSection === "expect"}
           onPress={() => toggleSection("expect")}
         />
-
         <AccordionCard
           title="Timeline"
           content={item.bodyTypeDiscussion.timeline}
           isExpanded={expandedSection === "timeline"}
           onPress={() => toggleSection("timeline")}
         />
-
         <AccordionCard
           title="Coach note"
           content={item.bodyTypeDiscussion.coachNote}
@@ -314,27 +424,36 @@ export default function CharacterDetail() {
           isLast={true}
         />
 
-        {/* Phases Section */}
-        <Text className="text-white font-spaceBold text-lg mb-3">
-          Phases Overview
-        </Text>
-        <View className="space-y-4 mb-12 gap-3">
-          {item.phases.map((phase: any) => (
+        {/* ─── Training Phases + per-phase Workout Carousels ─── */}
+        <Text className="text-white font-spaceBold text-lg mb-3">Training Phases</Text>
+        <View className="gap-4 mb-10">
+          {item.phases.map((phase: Phase) => (
             <View
               key={phase.phase}
               className="bg-tertiary/40 border border-white/5 p-5 rounded-3xl"
             >
-              <View className="flex-row justify-between items-center mb-2">
+              {/* Phase header */}
+              <View className="flex-row justify-between items-center mb-1">
                 <Text className="text-secondary font-spaceBold text-sm">
                   Phase {phase.phase} — {phase.name}
                 </Text>
-                <Text className="text-neutral-500 font-spaceBold text-[10px] uppercase">
-                  {phase.weeks} Weeks
-                </Text>
+                <View className="bg-secondary/10 border border-secondary/20 px-2 py-0.5 rounded-full">
+                  <Text className="text-secondary font-spaceBold text-[9px] uppercase">
+                    {phase.weeks} wks
+                  </Text>
+                </View>
               </View>
-              <Text className="text-neutral-400 font-spaceRegular text-xs leading-relaxed">
+
+              <Text className="text-neutral-400 font-spaceRegular text-xs leading-relaxed mb-1">
                 {phase.description}
               </Text>
+
+              <Text className="text-neutral-600 font-spaceBold text-[9px] uppercase tracking-wider">
+                {phase.workouts.length} training day{phase.workouts.length !== 1 ? "s" : ""} / week
+              </Text>
+
+              {/* Day carousel — independent state per phase */}
+              <WorkoutCarousel workouts={phase.workouts} />
             </View>
           ))}
         </View>
@@ -342,7 +461,7 @@ export default function CharacterDetail() {
         <Spacer height={40} />
       </ScrollView>
 
-      {/* Bottom Button Fixed */}
+      {/* Bottom CTA */}
       <View className="p-5 bg-primary border-t border-neutral-950">
         <Pressable
           onPress={handleStartProgram}
@@ -356,3 +475,4 @@ export default function CharacterDetail() {
     </SafeAreaView>
   );
 }
+
