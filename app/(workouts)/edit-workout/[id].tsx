@@ -37,6 +37,7 @@ import {
   templateExercises,
   workoutTemplates,
 } from "../../../db/schema";
+import Spacer from "../../../components/Spacer";
 
 interface ExerciseOption {
   id: number;
@@ -334,7 +335,7 @@ export default function EditTemplate() {
             className=" rounded-xl px-3 py-3 text-white font-spaceBold text-2xl mb-3"
           />
 
-          <View className="flex-row items-center justify-between rounded-xl bg-tertiary px-3 py-3">
+          <View className="flex-row items-center justify-between rounded-xl bg-tertiary/40 px-3 py-3">
             <View className="flex-row items-center">
               <Clock3 size={16} color="#fff" />
               <Text className="ml-2 text-white font-spaceMedium text-sm">
@@ -386,7 +387,7 @@ export default function EditTemplate() {
             templateExercisesList.map((exercise) => (
               <View
                 key={exercise.id}
-                className="bg-tertiary rounded-2xl p-4 mb-3 border border-neutral-900"
+                className="bg-tertiary/40 rounded-2xl p-4 mb-3 border border-neutral-900"
               >
                 <View className="flex-row items-start justify-between mb-3">
                   <View className="flex-1 pr-3">
@@ -515,6 +516,7 @@ export default function EditTemplate() {
             {saving ? "Saving..." : "Save Template"}
           </Text>
         </Pressable>
+        <Spacer height={24} />
       </ScrollView>
 
       <ExerciseBottomSheet

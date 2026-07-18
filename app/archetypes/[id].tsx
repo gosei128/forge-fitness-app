@@ -99,7 +99,13 @@ function AccordionCard({
       {/* Hidden measurement container */}
       <View
         pointerEvents="none"
-        style={{ position: "absolute", opacity: 0, left: 16, right: 16, top: 0 }}
+        style={{
+          position: "absolute",
+          opacity: 0,
+          left: 16,
+          right: 16,
+          top: 0,
+        }}
         onLayout={(e) => setContentHeight(e.nativeEvent.layout.height)}
       >
         <View className="mt-3 border-t border-neutral-900/60 pt-3">
@@ -159,8 +165,12 @@ function WorkoutCarousel({ workouts }: { workouts: Workout[] }) {
     });
   };
 
-  const goBack = () => { if (dayIndex > 0) navigate("prev"); };
-  const goNext = () => { if (dayIndex < workouts.length - 1) navigate("next"); };
+  const goBack = () => {
+    if (dayIndex > 0) navigate("prev");
+  };
+  const goNext = () => {
+    if (dayIndex < workouts.length - 1) navigate("next");
+  };
 
   const isFirst = dayIndex === 0;
   const isLast = dayIndex === workouts.length - 1;
@@ -240,7 +250,9 @@ function WorkoutCarousel({ workouts }: { workouts: Workout[] }) {
           <View
             key={idx}
             className={`flex-row items-center px-4 py-3 ${
-              idx < workout.exercises.length - 1 ? "border-b border-white/5" : ""
+              idx < workout.exercises.length - 1
+                ? "border-b border-white/5"
+                : ""
             }`}
           >
             <Text
@@ -295,13 +307,29 @@ export default function CharacterDetail() {
   const getDifficultyColor = (diff: string) => {
     switch (diff.toLowerCase()) {
       case "beginner":
-        return { text: "text-green-400", bg: "bg-green-400/10", border: "border-green-400/20" };
+        return {
+          text: "text-green-400",
+          bg: "bg-green-400/10",
+          border: "border-green-400/20",
+        };
       case "intermediate":
-        return { text: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20" };
+        return {
+          text: "text-amber-400",
+          bg: "bg-amber-400/10",
+          border: "border-amber-400/20",
+        };
       case "advanced":
-        return { text: "text-red-400", bg: "bg-red-400/10", border: "border-red-400/20" };
+        return {
+          text: "text-red-400",
+          bg: "bg-red-400/10",
+          border: "border-red-400/20",
+        };
       default:
-        return { text: "text-neutral-400", bg: "bg-neutral-400/10", border: "border-neutral-400/20" };
+        return {
+          text: "text-neutral-400",
+          bg: "bg-neutral-400/10",
+          border: "border-neutral-400/20",
+        };
     }
   };
 
@@ -316,7 +344,7 @@ export default function CharacterDetail() {
     if (!userId || !item) return;
     try {
       await selectArchetype(userId, item.id);
-      router.replace("/(tabs)");
+      router.replace("/(tabs)/workouts");
     } catch (e) {
       console.error("Error starting program:", e);
     }
@@ -342,17 +370,27 @@ export default function CharacterDetail() {
         >
           <ChevronLeft color="#fff" size={20} />
         </Pressable>
-        <Text className="text-white font-spaceBold text-lg ml-4">Physique Program</Text>
+        <Text className="text-white font-spaceBold text-lg ml-4">
+          Physique Program
+        </Text>
       </View>
 
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
         {/* Character header */}
         <View className="mt-4 mb-6">
-          <Text className="text-white font-spaceBold text-4xl mb-1">{item.character}</Text>
+          <Text className="text-white font-spaceBold text-4xl mb-1">
+            {item.character}
+          </Text>
           <View className="flex-row items-center gap-3 mt-1.5 mb-3.5">
-            <Text className="text-neutral-400 font-spaceMedium text-sm">{item.archetype}</Text>
-            <View className={`px-2 py-0.5 rounded-full border ${diffColors.bg} ${diffColors.border}`}>
-              <Text className={`font-spaceBold text-[9px] uppercase tracking-wider ${diffColors.text}`}>
+            <Text className="text-neutral-400 font-spaceMedium text-sm">
+              {item.archetype}
+            </Text>
+            <View
+              className={`px-2 py-0.5 rounded-full border ${diffColors.bg} ${diffColors.border}`}
+            >
+              <Text
+                className={`font-spaceBold text-[9px] uppercase tracking-wider ${diffColors.text}`}
+              >
                 {item.difficulty}
               </Text>
             </View>
@@ -379,31 +417,46 @@ export default function CharacterDetail() {
         </View>
 
         {/* Target Metrics */}
-        <Text className="text-white font-spaceBold text-lg mb-3">Target Metrics</Text>
+        <Text className="text-white font-spaceBold text-lg mb-3">
+          Target Metrics
+        </Text>
         <View className="flex-row justify-between gap-3 mb-6">
           <View className="flex-1 bg-tertiary/40 border border-white/5 p-4 rounded-2xl items-center justify-center">
             <Target color="#fba613" size={16} className="mb-2" />
-            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">Body Fat</Text>
-            <Text className="text-white font-spaceBold text-sm text-center">{item.targets.bodyFat}</Text>
+            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">
+              Body Fat
+            </Text>
+            <Text className="text-white font-spaceBold text-sm text-center">
+              {item.targets.bodyFat}
+            </Text>
           </View>
           <View className="flex-1 bg-tertiary/40 border border-white/5 p-4 rounded-2xl items-center justify-center">
             <Trophy color="#fba613" size={16} className="mb-2" />
-            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">Strength</Text>
+            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">
+              Strength
+            </Text>
             <Text className="text-white font-spaceBold text-sm text-center">
               {getStrengthTarget(item.targets)}
             </Text>
           </View>
           <View className="flex-1 bg-tertiary/40 border border-white/5 p-4 rounded-2xl items-center justify-center">
             <Dumbbell color="#fba613" size={16} className="mb-2" />
-            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">Focus</Text>
-            <Text className="text-white font-spaceBold text-[10px] text-center" numberOfLines={2}>
+            <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase mb-1">
+              Focus
+            </Text>
+            <Text
+              className="text-white font-spaceBold text-[10px] text-center"
+              numberOfLines={2}
+            >
               {item.targets.focus}
             </Text>
           </View>
         </View>
 
         {/* Program Discussion */}
-        <Text className="text-white font-spaceBold text-lg mb-3">Program Discussion</Text>
+        <Text className="text-white font-spaceBold text-lg mb-3">
+          Program Discussion
+        </Text>
         <AccordionCard
           title="What to expect"
           content={item.bodyTypeDiscussion.expectations}
@@ -425,7 +478,9 @@ export default function CharacterDetail() {
         />
 
         {/* ─── Training Phases + per-phase Workout Carousels ─── */}
-        <Text className="text-white font-spaceBold text-lg mb-3">Training Phases</Text>
+        <Text className="text-white font-spaceBold text-lg mb-3">
+          Training Phases
+        </Text>
         <View className="gap-4 mb-10">
           {item.phases.map((phase: Phase) => (
             <View
@@ -439,7 +494,7 @@ export default function CharacterDetail() {
                 </Text>
                 <View className="bg-secondary/10 border border-secondary/20 px-2 py-0.5 rounded-full">
                   <Text className="text-secondary font-spaceBold text-[9px] uppercase">
-                    {phase.weeks} wks
+                    {phase.weeks} weeks
                   </Text>
                 </View>
               </View>
@@ -449,7 +504,8 @@ export default function CharacterDetail() {
               </Text>
 
               <Text className="text-neutral-600 font-spaceBold text-[9px] uppercase tracking-wider">
-                {phase.workouts.length} training day{phase.workouts.length !== 1 ? "s" : ""} / week
+                {phase.workouts.length} training day
+                {phase.workouts.length !== 1 ? "s" : ""} / week
               </Text>
 
               {/* Day carousel — independent state per phase */}
@@ -475,4 +531,3 @@ export default function CharacterDetail() {
     </SafeAreaView>
   );
 }
-

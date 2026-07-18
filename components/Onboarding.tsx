@@ -370,17 +370,21 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         exiting={FadeOut.duration(300)}
         className="flex-1 bg-primary justify-center items-center px-6"
       >
-        <Animated.View style={logoAnimatedStyle} className="mb-6 items-center">
-          <View className="bg-secondary/10 border-2 border-secondary p-6 rounded-full">
-            <Flame color="#f3ff47" fill="#f3ff47" size={54} />
-          </View>
-        </Animated.View>
+        <View className="mb-6 items-center">
+          <Image
+            source={require("../assets/images/forge-logo.png")}
+            style={{
+              width: 140,
+              height: 140,
+            }}
+          />
+        </View>
 
         <Animated.Text
           entering={FadeInDown.delay(200).duration(500)}
           className="text-white font-spaceBold text-5xl tracking-widest text-center"
         >
-          FORGE
+          WELCOME
         </Animated.Text>
 
         <Animated.Text
@@ -415,12 +419,6 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
         exiting={FadeOut.duration(400)}
         className="flex-1 bg-primary justify-center items-center px-6"
       >
-        <Animated.View style={pulseAnimatedStyle} className="mb-8 items-center">
-          <View className="bg-secondary/10 border-2 border-secondary p-6 rounded-full">
-            <Flame color="#f3ff47" fill="#f3ff47" size={64} />
-          </View>
-        </Animated.View>
-
         <Animated.Text
           entering={FadeInDown.delay(200).duration(500)}
           className="text-white font-spaceBold text-4xl text-center mb-10 tracking-wide"

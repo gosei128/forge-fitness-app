@@ -447,10 +447,6 @@ const Workouts = () => {
           className="flex-1 px-5"
           showsVerticalScrollIndicator={false}
         >
-          <View className="justify-between flex-row items-center mb-6">
-            <Text className="text-3xl font-spaceBold text-white">Workouts</Text>
-          </View>
-
           {/* Quick Start Button */}
           <Pressable
             onPress={handleOnPress}
@@ -472,7 +468,7 @@ const Workouts = () => {
           {/* Tab Selector */}
           <View
             onLayout={(e) => setTabContainerWidth(e.nativeEvent.layout.width)}
-            className="flex-row bg-tertiary p-1.5 rounded-2xl mb-6 border border-neutral-900 relative"
+            className="flex-row bg-tertiary/40 p-1.5 rounded-2xl mb-6 border border-neutral-900 relative"
           >
             <Animated.View
               style={[
@@ -541,7 +537,7 @@ const Workouts = () => {
               {allTemplates.map((template) => (
                 <View
                   key={template.id}
-                  className="bg-tertiary border border-neutral-900 rounded-3xl p-5 mb-4 relative"
+                  className="bg-tertiary/40 border border-neutral-900 rounded-3xl p-5 mb-4 relative"
                 >
                   {/* Menu button for custom templates */}
                   {template.isCustom && (
@@ -617,7 +613,7 @@ const Workouts = () => {
             <Animated.View
               key="custom"
               entering={FadeInUp.duration(300)}
-              className="bg-tertiary border border-neutral-900 rounded-3xl p-5 mb-10"
+              className="bg-tertiary/40 border border-neutral-900 rounded-3xl p-5 mb-10"
             >
               <View className="flex-row items-center gap-2 mb-4">
                 <Sparkles size={16} color="#f3ff47" className="mr-2" />
@@ -746,7 +742,7 @@ const Workouts = () => {
               className="pb-12"
             >
               {workoutHistory.length === 0 ? (
-                <View className="bg-tertiary border border-neutral-900 border-dashed rounded-3xl p-8 items-center justify-center">
+                <View className="bg-tertiary/40 border border-neutral-900 border-dashed rounded-3xl p-8 items-center justify-center">
                   <Dumbbell size={36} color="#444" className="mb-2" />
                   <Text className="text-neutral-500 font-spaceRegular text-sm text-center">
                     No workout sessions recorded yet. Finish a workout to log
@@ -757,7 +753,7 @@ const Workouts = () => {
                 workoutHistory.map((session) => (
                   <View
                     key={session.id}
-                    className="bg-tertiary border border-neutral-900 rounded-3xl p-5 mb-4"
+                    className="bg-tertiary/40 border border-neutral-900 rounded-3xl p-5 mb-4"
                   >
                     <View className="flex-row justify-between items-start mb-2">
                       <View className="flex-1 mr-2">

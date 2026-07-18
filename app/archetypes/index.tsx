@@ -1,5 +1,11 @@
 import React, { useState, useCallback } from "react";
-import { View, Text, ScrollView, Pressable, ActivityIndicator } from "react-native";
+import {
+  View,
+  Text,
+  ScrollView,
+  Pressable,
+  ActivityIndicator,
+} from "react-native";
 import { router, useFocusEffect } from "expo-router";
 import { db } from "../../db";
 import { user, userStats } from "../../db/schema";
@@ -39,7 +45,7 @@ export default function CharacterSelection() {
       return () => {
         isMounted = false;
       };
-    }, [])
+    }, []),
   );
 
   const archetypes = getAllArchetypes();
@@ -47,13 +53,29 @@ export default function CharacterSelection() {
   const getDifficultyColor = (diff: string) => {
     switch (diff.toLowerCase()) {
       case "beginner":
-        return { text: "text-green-400", bg: "bg-green-400/10", border: "border-green-400/20" };
+        return {
+          text: "text-green-400",
+          bg: "bg-green-400/10",
+          border: "border-green-400/20",
+        };
       case "intermediate":
-        return { text: "text-amber-400", bg: "bg-amber-400/10", border: "border-amber-400/20" };
+        return {
+          text: "text-amber-400",
+          bg: "bg-amber-400/10",
+          border: "border-amber-400/20",
+        };
       case "advanced":
-        return { text: "text-red-400", bg: "bg-red-400/10", border: "border-red-400/20" };
+        return {
+          text: "text-red-400",
+          bg: "bg-red-400/10",
+          border: "border-red-400/20",
+        };
       default:
-        return { text: "text-neutral-400", bg: "bg-neutral-400/10", border: "border-neutral-400/20" };
+        return {
+          text: "text-neutral-400",
+          bg: "bg-neutral-400/10",
+          border: "border-neutral-400/20",
+        };
     }
   };
 
@@ -81,7 +103,8 @@ export default function CharacterSelection() {
       <ScrollView className="flex-1 px-5" showsVerticalScrollIndicator={false}>
         <View className="mt-2 mb-6">
           <Text className="text-neutral-400 font-spaceRegular text-sm">
-            Your coach will build the path. Committing to a physique archetype dictates your training and targets.
+            Your coach will build the path. Committing to a physique archetype
+            dictates your training and targets.
           </Text>
         </View>
 
@@ -93,7 +116,9 @@ export default function CharacterSelection() {
               key={item.id}
               onPress={() => router.push(`/archetypes/${item.id}`)}
               className={`bg-[#1a1a1e] p-5 rounded-3xl mb-5 border ${
-                isSelected ? "border-[#fba613]/40 shadow-lg shadow-[#fba613]/5" : "border-neutral-900"
+                isSelected
+                  ? "border-[#fba613]/40 shadow-lg shadow-[#fba613]/5"
+                  : "border-neutral-900"
               }`}
             >
               {/* Character Header & Badge */}
@@ -106,8 +131,12 @@ export default function CharacterSelection() {
                     {item.archetype}
                   </Text>
                 </View>
-                <View className={`px-2.5 py-1 rounded-full border ${diffColors.bg} ${diffColors.border}`}>
-                  <Text className={`font-spaceBold text-[10px] uppercase tracking-wider ${diffColors.text}`}>
+                <View
+                  className={`px-2.5 py-1 rounded-full border ${diffColors.bg} ${diffColors.border}`}
+                >
+                  <Text
+                    className={`font-spaceBold text-[10px] uppercase tracking-wider ${diffColors.text}`}
+                  >
                     {item.difficulty}
                   </Text>
                 </View>
@@ -137,7 +166,10 @@ export default function CharacterSelection() {
                   <Text className="text-neutral-500 font-spaceBold text-[9px] uppercase tracking-wider mb-0.5">
                     Focus
                   </Text>
-                  <Text className="text-white font-spaceBold text-[10px] text-center" numberOfLines={1}>
+                  <Text
+                    className="text-white font-spaceBold text-[10px] text-center"
+                    numberOfLines={1}
+                  >
                     {item.targets.focus.split(" + ")[0]}
                   </Text>
                 </View>
@@ -158,7 +190,7 @@ export default function CharacterSelection() {
           className="py-4 items-center justify-center mt-2 mb-8"
         >
           <Text className="text-neutral-500 font-spaceBold text-sm uppercase tracking-wider">
-            Skip For Now
+            CANCEL
           </Text>
         </Pressable>
       </ScrollView>

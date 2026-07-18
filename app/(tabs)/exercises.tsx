@@ -257,8 +257,7 @@ const Exercises = () => {
       {/* Title + filter button row */}
       <View className="px-5 mb-4 flex-row items-center justify-between">
         <View>
-          <Text className="text-2xl font-spaceBold text-white">Exercises</Text>
-          <Text className="text-neutral-500 font-spaceMedium text-sm mt-0.5">
+          <Text className="text-white font-spaceBold text-2xl mt-0.5">
             {filtered.length > 0
               ? `${filtered.length} exercise${filtered.length !== 1 ? "s" : ""}${activeFilter ? ` · ${activeFilter}` : ""}`
               : ""}
