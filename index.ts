@@ -1,8 +1,5 @@
-import { registerRootComponent } from 'expo';
+import { registerWorkoutNotificationHandlers } from "./lib/notificationService";
 
-import App from './app/(tabs)/index';
+registerWorkoutNotificationHandlers();
 
-// registerRootComponent calls AppRegistry.registerComponent('main', () => Index);
-// It also ensures that whether you load the app in Expo Go or in a native build,
-// the environment is set up appropriately
-registerRootComponent(App);
+import "expo-router/entry";

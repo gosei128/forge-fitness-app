@@ -1,5 +1,12 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import { Alert, Vibration } from "react-native";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { Alert, AppState, Vibration } from "react-native";
 import { router } from "expo-router";
 // Dynamically import Audio from expo-av to prevent crashes on start if the native module is not compiled/built
 let Audio: any = null;
@@ -21,6 +28,11 @@ import {
 } from "../db/schema";
 import { eq, desc, inArray, and } from "drizzle-orm";
 import { completeWorkoutSession } from "../lib/sessionCompletion";
+import {
+  startWorkoutNotification,
+  stopWorkoutNotification,
+  updateWorkoutNotification,
+} from "../lib/notificationService";
 
 export interface LoggedSet {
   id: number;
@@ -44,9 +56,11 @@ interface WorkoutSessionContextType {
   isActive: boolean;
   isCollapsed: boolean;
   sessionName: string;
+  currentExerciseName: string;
   elapsedTime: number;
   selectedExercises: SelectedExercise[];
   restTimeLeft: number;
+  restDuration: number;
   customRestDuration: number;
   isRestActive: boolean;
   startTime: Date | null;
@@ -87,6 +101,7 @@ export const WorkoutSessionProvider: React.FC<{
   const [isActive, setIsActive] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [sessionName, setSessionNameState] = useState("");
+  const [currentExerciseName, setCurrentExerciseName] = useState("");
   const [elapsedTime, setElapsedTime] = useState(0);
   const [selectedExercises, setSelectedExercises] = useState<
     SelectedExercise[]
@@ -95,47 +110,36 @@ export const WorkoutSessionProvider: React.FC<{
 
   // Rest Timer States
   const [restTimeLeft, setRestTimeLeft] = useState(0);
+  const [restStartTime, setRestStartTime] = useState<number | null>(null);
+  const [restDuration, setRestDuration] = useState(0);
   const [customRestDuration, setCustomRestDuration] = useState(60); // default 60s
   const [isRestActive, setIsRestActive] = useState(false);
+  const [isRestComplete, setIsRestComplete] = useState(false);
+  const restCompleteHandledRef = useRef(false);
 
-  // Active session timer effect
-  useEffect(() => {
-    let interval: any = null;
-    if (isActive) {
-      interval = setInterval(() => {
-        setElapsedTime((prev) => prev + 1);
-      }, 1000);
-    } else {
-      setElapsedTime(0);
+  const getElapsedSeconds = useCallback(() => {
+    if (!startTime) {
+      return 0;
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isActive]);
 
-  // Rest timer countdown effect
-  useEffect(() => {
-    let interval: any = null;
-    if (isRestActive && restTimeLeft > 0) {
-      interval = setInterval(() => {
-        setRestTimeLeft((prev) => {
-          if (prev <= 1) {
-            setIsRestActive(false);
-            triggerRestCompleteFeedback();
-            return 0;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-    } else if (restTimeLeft === 0) {
-      setIsRestActive(false);
+    return Math.max(
+      0,
+      Math.floor((Date.now() - startTime.getTime()) / 1000),
+    );
+  }, [startTime]);
+
+  const getRestSecondsLeft = useCallback(() => {
+    if (!restStartTime || restDuration <= 0) {
+      return 0;
     }
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [isRestActive, restTimeLeft]);
 
-  const triggerRestCompleteFeedback = async () => {
+    return Math.max(
+      0,
+      restDuration - Math.floor((Date.now() - restStartTime) / 1000),
+    );
+  }, [restDuration, restStartTime]);
+
+  const triggerRestCompleteFeedback = useCallback(async () => {
     // Vibrate device
     Vibration.vibrate([0, 500, 200, 500]);
 
@@ -163,7 +167,89 @@ export const WorkoutSessionProvider: React.FC<{
         console.error("Could not play sound: ", e);
       }
     }
-  };
+  }, []);
+
+  const syncTimers = useCallback(() => {
+    if (!isActive) {
+      setElapsedTime(0);
+      return;
+    }
+
+    const nextElapsedTime = getElapsedSeconds();
+    setElapsedTime(nextElapsedTime);
+
+    const startTimeMs = startTime?.getTime();
+
+    if (!isRestActive) {
+      updateWorkoutNotification({
+        sessionName,
+        elapsedTime: nextElapsedTime,
+        currentExerciseName,
+        restComplete: isRestComplete,
+        startTime: startTimeMs,
+      });
+      return;
+    }
+
+    const nextRestTimeLeft = getRestSecondsLeft();
+    setRestTimeLeft(nextRestTimeLeft);
+
+    if (nextRestTimeLeft <= 0) {
+      setIsRestActive(false);
+      setRestTimeLeft(0);
+      setIsRestComplete(true);
+
+      if (!restCompleteHandledRef.current) {
+        restCompleteHandledRef.current = true;
+        triggerRestCompleteFeedback();
+      }
+    }
+
+    updateWorkoutNotification({
+      sessionName,
+      elapsedTime: nextElapsedTime,
+      restTimeLeft: nextRestTimeLeft,
+      currentExerciseName,
+      restComplete: nextRestTimeLeft <= 0,
+      startTime: startTimeMs,
+    });
+  }, [
+    currentExerciseName,
+    getElapsedSeconds,
+    getRestSecondsLeft,
+    isActive,
+    isRestActive,
+    isRestComplete,
+    sessionName,
+    startTime,
+    triggerRestCompleteFeedback,
+  ]);
+
+  useEffect(() => {
+    if (!isActive) {
+      setElapsedTime(0);
+      return;
+    }
+
+    syncTimers();
+    const interval = setInterval(syncTimers, 1000);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [isActive, syncTimers]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        syncTimers();
+      }
+    });
+
+    return () => {
+      subscription.remove();
+    };
+  }, [syncTimers]);
 
   const startSession = async (
     title: string,
@@ -172,25 +258,31 @@ export const WorkoutSessionProvider: React.FC<{
     exerciseUnitsList?: string,
     templateId?: number,
   ) => {
-    setStartTime(new Date());
+    const startedAt = new Date();
+    setStartTime(startedAt);
     setElapsedTime(0);
     setIsCollapsed(false);
     setRestTimeLeft(0);
+    setRestStartTime(null);
+    setRestDuration(0);
     setIsRestActive(false);
+    setIsRestComplete(false);
+    setCurrentExerciseName("");
+    restCompleteHandledRef.current = false;
     setCustomRestDuration(defaultRestDuration ?? 60);
 
     const userIdVal = await ensureUser();
 
-    if (title) {
-      setSessionNameState(title);
-    } else {
+    let nextSessionName = title;
+    if (!nextSessionName) {
       const hours = new Date().getHours();
       let timeOfDay = "Workout";
       if (hours < 12) timeOfDay = "Morning Workout";
       else if (hours < 17) timeOfDay = "Afternoon Workout";
       else timeOfDay = "Evening Workout";
-      setSessionNameState(timeOfDay);
+      nextSessionName = timeOfDay;
     }
+    setSessionNameState(nextSessionName);
 
     if (templateId) {
       try {
@@ -405,6 +497,7 @@ export const WorkoutSessionProvider: React.FC<{
     }
 
     setIsActive(true);
+    await startWorkoutNotification(nextSessionName, 0, "", startedAt.getTime());
   };
 
   const setSessionName = (name: string) => {
@@ -508,6 +601,23 @@ export const WorkoutSessionProvider: React.FC<{
       }
       if (completionResult.leveledUp) {
         message += `\n\n🎉 LEVEL UP! You reached Level ${completionResult.newLevel}! 🎉`;
+        // Play level-up sound
+        if (Audio) {
+          try {
+            const { sound: levelUpSound } = await Audio.Sound.createAsync(
+              require("../assets/audio/notif.wav"),
+            );
+            await levelUpSound.playAsync();
+            // Unload after playback finishes to free memory
+            levelUpSound.setOnPlaybackStatusUpdate((status: any) => {
+              if (status.didJustFinish) {
+                levelUpSound.unloadAsync();
+              }
+            });
+          } catch (e) {
+            console.warn("[WorkoutSession] Failed to play level-up sound:", e);
+          }
+        }
       }
 
       Alert.alert("Workout Saved", message, [
@@ -517,8 +627,15 @@ export const WorkoutSessionProvider: React.FC<{
             setIsActive(false);
             setSelectedExercises([]);
             setSessionNameState("");
+            setCurrentExerciseName("");
             setElapsedTime(0);
             setIsCollapsed(false);
+            setRestTimeLeft(0);
+            setRestStartTime(null);
+            setRestDuration(0);
+            setIsRestActive(false);
+            setIsRestComplete(false);
+            stopWorkoutNotification();
             router.replace("/(tabs)/workouts");
           },
         },
@@ -560,10 +677,15 @@ export const WorkoutSessionProvider: React.FC<{
             setIsActive(false);
             setSelectedExercises([]);
             setSessionNameState("");
+            setCurrentExerciseName("");
             setElapsedTime(0);
             setIsCollapsed(false);
             setRestTimeLeft(0);
+            setRestStartTime(null);
+            setRestDuration(0);
             setIsRestActive(false);
+            setIsRestComplete(false);
+            stopWorkoutNotification();
             router.replace("/(tabs)/workouts");
           },
         },
@@ -712,8 +834,13 @@ export const WorkoutSessionProvider: React.FC<{
                 const updatedSet = { ...s, ...fields };
                 // Trigger rest timer only when isCompleted switches from false to true
                 if (fields.isCompleted === true && !s.isCompleted) {
+                  setCurrentExerciseName(ex.name);
+                  setRestStartTime(Date.now());
+                  setRestDuration(customRestDuration);
                   setRestTimeLeft(customRestDuration);
                   setIsRestActive(true);
+                  setIsRestComplete(false);
+                  restCompleteHandledRef.current = false;
                 }
                 return updatedSet;
               }
@@ -742,14 +869,21 @@ export const WorkoutSessionProvider: React.FC<{
 
   const startRestTimer = () => {
     if (customRestDuration > 0) {
+      setRestStartTime(Date.now());
+      setRestDuration(customRestDuration);
       setRestTimeLeft(customRestDuration);
       setIsRestActive(true);
+      setIsRestComplete(false);
+      restCompleteHandledRef.current = false;
     }
   };
 
   const stopRestTimer = () => {
     setIsRestActive(false);
     setRestTimeLeft(0);
+    setRestStartTime(null);
+    setRestDuration(0);
+    setIsRestComplete(false);
   };
 
   return (
@@ -758,9 +892,11 @@ export const WorkoutSessionProvider: React.FC<{
         isActive,
         isCollapsed,
         sessionName,
+        currentExerciseName,
         elapsedTime,
         selectedExercises,
         restTimeLeft,
+        restDuration,
         customRestDuration,
         isRestActive,
         startTime,

@@ -1,19 +1,21 @@
 {
   "name": "forge",
   "version": "1.0.0",
-  "main": "expo-router/entry",
+  "main": "./index.ts",
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
     "@react-navigation/bottom-tabs": "^7.18.4",
     "drizzle-orm": "^0.45.2",
-    "expo": "~56.0.12",
+    "expo": "~56.0.16",
     "expo-av": "^16.0.8",
-    "expo-blur": "~56.0.3",
+    "expo-blur": "~56.0.4",
     "expo-constants": "~56.0.18",
+    "expo-dev-client": "~56.0.23",
     "expo-font": "~56.0.7",
-    "expo-linking": "~56.0.14",
-    "expo-router": "~56.2.11",
-    "expo-splash-screen": "~56.0.10",
+    "expo-linking": "~56.0.15",
+    "expo-notifications": "~56.0.21",
+    "expo-router": "~56.2.15",
+    "expo-splash-screen": "~56.0.13",
     "expo-sqlite": "~56.0.5",
     "expo-status-bar": "~56.0.4",
     "lucide-react-native": "^1.22.0",
@@ -22,10 +24,11 @@
     "react-native": "0.85.3",
     "react-native-ease": "^0.7.3",
     "react-native-gesture-handler": "~2.31.1",
+    "react-native-notify-kit": "^10.4.9",
     "react-native-reanimated": "4.3.1",
     "react-native-safe-area-context": "~5.7.0",
     "react-native-screens": "4.25.2",
-    "react-native-svg": "^15.15.5",
+    "react-native-svg": "15.15.4",
     "react-native-worklets": "0.8.3",
     "zustand": "^5.0.14"
   },
@@ -41,7 +44,9 @@
     "generate": "drizzle-kit generate",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "postinstall": "echo 'installed'"
   },
+  "npmrc": "legacy-peer-deps=true",
   "private": true
 }

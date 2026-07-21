@@ -1,9 +1,16 @@
-import React from "react";
-import { View, Text, Pressable, StyleSheet } from "react-native";
+import React, { useEffect } from "react";
+import { View, Text, Pressable, StyleSheet, Vibration } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useWorkoutSession } from "../context/WorkoutSessionContext";
 import { Dumbbell, Timer, Coffee, ChevronUp } from "lucide-react-native";
-import Animated, { FadeInUp, FadeOutUp } from "react-native-reanimated";
+import Animated, {
+  SlideInDown,
+  FadeOutUp,
+  useAnimatedStyle,
+  useSharedValue,
+  withRepeat,
+  withTiming,
+} from "react-native-reanimated";
 
 export default function ActiveWorkoutFloatingBar() {
   const insets = useSafeAreaInsets();
@@ -11,11 +18,27 @@ export default function ActiveWorkoutFloatingBar() {
     isActive,
     isCollapsed,
     sessionName,
+    currentExerciseName,
     elapsedTime,
     restTimeLeft,
+    restDuration,
     isRestActive,
     expandSession,
   } = useWorkoutSession();
+  const glow = useSharedValue(0);
+
+  useEffect(() => {
+    glow.value =
+      isRestActive && restTimeLeft > 0
+        ? withRepeat(withTiming(1, { duration: 900 }), -1, true)
+        : withTiming(0, { duration: 180 });
+  }, [glow, isRestActive, restTimeLeft]);
+
+  const glowStyle = useAnimatedStyle(() => ({
+    shadowOpacity: 0.35 + glow.value * 0.25,
+    shadowRadius: 10 + glow.value * 12,
+    borderColor: isRestActive && restTimeLeft > 0 ? "#f59e0b" : "#f3ff47",
+  }));
 
   // Only render if a session is active and currently collapsed
   if (!isActive || !isCollapsed) {
@@ -28,20 +51,31 @@ export default function ActiveWorkoutFloatingBar() {
     return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
   };
 
+  const handlePress = () => {
+    Vibration.vibrate(10);
+    expandSession();
+  };
+
+  const restProgress =
+    isRestActive && restDuration > 0
+      ? Math.max(0, Math.min(1, restTimeLeft / restDuration))
+      : 0;
+
   return (
     <Animated.View
-      entering={FadeInUp.duration(300)}
+      entering={SlideInDown.springify().damping(18).stiffness(180)}
       exiting={FadeOutUp.duration(200)}
       style={[
         styles.container,
+        glowStyle,
         {
           top: insets.top + 8,
         },
       ]}
-      className="bg-tertiary border h-35  border-primary rounded-2xl flex-row items-center px-4 py-3"
+      className="bg-tertiary border flex-row items-center px-4 py-3"
     >
       <Pressable
-        onPress={expandSession}
+        onPress={handlePress}
         className="flex-1 flex-row items-center justify-between"
       >
         {/* Left Side: Workout Title & Timer */}
@@ -52,11 +86,17 @@ export default function ActiveWorkoutFloatingBar() {
           <View className="flex-1">
             <Text
               numberOfLines={1}
-              className="text-white font-spaceBold text-2xl leading-tight"
+              className="text-white font-spaceBold text-lg leading-tight"
             >
               {sessionName || "Active Workout"}
             </Text>
-            <View className="flex-row items-center mt-0.5">
+            <Text
+              numberOfLines={1}
+              className="text-neutral-300 font-spaceMedium text-[11px] mt-0.5"
+            >
+              {currentExerciseName || "Session in progress"}
+            </Text>
+            <View className="flex-row items-center mt-1">
               <Timer size={11} color="#9ca3af" className="mr-1" />
               <Text className="text-gray-400 font-spaceMedium text-[11px]">
                 {formatTime(elapsedTime)}
@@ -80,6 +120,18 @@ export default function ActiveWorkoutFloatingBar() {
           <ChevronUp size={14} color="#fff" />
         </View>
       </Pressable>
+      {isRestActive && restTimeLeft > 0 && (
+        <View style={styles.progressTrack}>
+          <View
+            style={[
+              styles.progressFill,
+              {
+                width: `${restProgress * 100}%`,
+              },
+            ]}
+          />
+        </View>
+      )}
     </Animated.View>
   );
 }
@@ -89,11 +141,28 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 16,
     right: 16,
+    minHeight: 72,
+    borderRadius: 36,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.35,
     shadowRadius: 10,
     elevation: 20,
     zIndex: 9999, // Ensure it floats on top of everything
+    overflow: "hidden",
+  },
+  progressTrack: {
+    position: "absolute",
+    left: 18,
+    right: 18,
+    bottom: 7,
+    height: 3,
+    borderRadius: 999,
+    backgroundColor: "rgba(245, 158, 11, 0.18)",
+  },
+  progressFill: {
+    height: "100%",
+    borderRadius: 999,
+    backgroundColor: "#f59e0b",
   },
 });

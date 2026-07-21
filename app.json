@@ -21,7 +21,10 @@
         "monochromeImage": "./assets/images/forge-logo.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.roni.dev.forge"
+      "package": "com.roni.dev.forge",
+      "permissions": [
+        "POST_NOTIFICATIONS"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -29,7 +32,27 @@
     "plugins": [
       "expo-sqlite",
       "expo-router",
-      "expo-status-bar"
-    ]
+      "expo-status-bar",
+      "expo-av",
+      [
+        "react-native-notify-kit",
+        {
+          "android": {
+            "foregroundService": {
+              "types": [
+                "health"
+              ]
+            }
+          }
+        }
+      ],
+      "expo-splash-screen"
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "a75f6e02-bc1c-48c5-b49d-bcdb432072ae"
+      }
+    }
   }
 }
