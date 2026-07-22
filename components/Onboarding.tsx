@@ -325,7 +325,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
           .insert(user)
           .values({
             firstName: firstName.trim(),
-            lastName: lastName.trim(),
+
             email: "athlete@forge.com",
             remoteId: "default_user",
           })
@@ -333,7 +333,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       } catch (err) {
         await db.insert(user).values({
           firstName: firstName.trim(),
-          lastName: lastName.trim(),
+
           email: "athlete@forge.com",
           remoteId: "default_user",
         });
@@ -541,10 +541,7 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
       >
         <View className="mb-8 items-center">
           <Text className="text-white font-spaceBold text-3xl text-center mb-2">
-            Create Profile
-          </Text>
-          <Text className="text-neutral-500 font-spaceRegular text-sm text-center">
-            Enter your details to initialize your fitness statistics
+            What is your Name?
           </Text>
         </View>
 
@@ -562,30 +559,14 @@ export default function Onboarding({ onComplete }: OnboardingProps) {
               editable={!saving}
             />
           </View>
-
-          <View className="mt-4">
-            <Text className="text-neutral-400 font-spaceMedium text-xs uppercase mb-2 ml-1">
-              Last Name
-            </Text>
-            <TextInput
-              placeholder="e.g. S."
-              placeholderTextColor="#555"
-              value={lastName}
-              onChangeText={setLastName}
-              className="bg-tertiary border border-neutral-900 text-white rounded-2xl px-4 py-3.5 font-spaceBold text-base"
-              editable={!saving}
-            />
-          </View>
         </View>
 
         <View className="mt-10">
           <Pressable
             onPress={handleSaveProfile}
-            disabled={saving || !firstName.trim() || !lastName.trim()}
+            disabled={saving || !firstName.trim()}
             className={`py-4 rounded-2xl items-center justify-center flex-row shadow-lg ${
-              firstName.trim() && lastName.trim()
-                ? "bg-secondary"
-                : "bg-neutral-800 opacity-50"
+              firstName.trim() ? "bg-secondary" : "bg-neutral-800 opacity-50"
             }`}
           >
             {saving ? (

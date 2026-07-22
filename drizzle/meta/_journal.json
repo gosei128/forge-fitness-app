@@ -78,6 +78,13 @@
       "when": 1784659118369,
       "tag": "0010_freezing_leech",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "6",
+      "when": 1784697765410,
+      "tag": "0011_silent_iron_patriot",
+      "breakpoints": true
     }
   ]
 }

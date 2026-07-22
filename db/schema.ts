@@ -17,7 +17,6 @@ export const user = sqliteTable(
   {
     id: int("id").primaryKey({ autoIncrement: true }),
     firstName: text("first_name").notNull(),
-    lastName: text("last_name").notNull(),
     remoteId: text("remote_id").notNull(),
     email: text("email").notNull(),
     lastSyncedAt: int("last_synced_at", { mode: "timestamp" }),

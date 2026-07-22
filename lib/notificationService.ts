@@ -24,7 +24,7 @@ const getNotifyKit = () => {
       notifyKit = loadedModule.default;
     } catch (error) {
       console.warn(
-        "[WorkoutNotification] react-native-notify-kit is unavailable. Use a development build for workout notifications.",
+        "[WorkoutNotification] react-native-notify-kit is unavailable. Use a development build.",
         error,
       );
       return null;
@@ -60,9 +60,9 @@ const ensureChannel = async () => {
   await notifee.requestPermission();
   await notifee.createChannel({
     id: CHANNEL_ID,
-    name: "Workout timer",
+    name: "Workout Timer",
     importance: notifyKitModule.AndroidImportance.HIGH,
-    vibration: true,
+    vibration: false,
   });
   channelReady = true;
 };
@@ -73,24 +73,35 @@ const buildNotification = ({
   restTimeLeft,
   currentExerciseName,
   restComplete,
-  startTime,
+  chronometerTimestamp,
+  isPaused,
 }: {
   sessionName: string;
   elapsedTime: number;
   restTimeLeft?: number;
   currentExerciseName?: string;
   restComplete?: boolean;
-  startTime?: number;
+  chronometerTimestamp?: number;
+  isPaused?: boolean;
 }): Notification => {
   const title = sessionName || NOTIFICATION_TITLE_FALLBACK;
-  const elapsedLabel = `Elapsed ${formatDuration(elapsedTime)}`;
-  const exerciseLabel = currentExerciseName ? ` - ${currentExerciseName}` : "";
-  const body =
-    restComplete === true
-      ? `REST COMPLETE - Time for next set${exerciseLabel}`
-      : restTimeLeft && restTimeLeft > 0
-        ? `${elapsedLabel} - Rest ${formatDuration(restTimeLeft)}${exerciseLabel}`
-        : `${elapsedLabel}${exerciseLabel}`;
+  const exerciseLabel = currentExerciseName ? ` · ${currentExerciseName}` : "";
+
+  let body: string;
+  if (isPaused) {
+    body = `⏸ Paused — ${formatDuration(elapsedTime)}${exerciseLabel}`;
+  } else if (restComplete === true) {
+    body = `REST COMPLETE — Ready for next set${exerciseLabel}`;
+  } else if (restTimeLeft && restTimeLeft > 0) {
+    body = `Resting ${formatDuration(restTimeLeft)}${exerciseLabel}`;
+  } else {
+    body = `Elapsed ${formatDuration(elapsedTime)}${exerciseLabel}`;
+  }
+
+  // Effective timestamp for chronometer: accounts for all accumulated pause time
+  const timestamp =
+    chronometerTimestamp ??
+    Date.now() - Math.max(0, elapsedTime) * 1000;
 
   return {
     id: NOTIFICATION_ID,
@@ -108,12 +119,26 @@ const buildNotification = ({
         id: "default",
         launchActivity: "default",
       },
-      showChronometer: true,
-      timestamp: startTime || (Date.now() - Math.max(0, elapsedTime) * 1000),
+      // showChronometer renders a native Android Chronometer — zero JS overhead,
+      // survives process kills and lock screen. This is how Strava does it.
+      showChronometer: !isPaused,
+      timestamp,
       foregroundServiceTypes: [
         notifyKitModule?.AndroidForegroundServiceType
           .FOREGROUND_SERVICE_TYPE_HEALTH,
       ].filter(Boolean) as number[],
+      actions: [
+        {
+          title: isPaused ? "▶  Resume" : "⏸  Pause",
+          pressAction: {
+            id: isPaused ? "resume-workout" : "pause-workout",
+          },
+        },
+        {
+          title: "✓  Finish",
+          pressAction: { id: "finish-workout" },
+        },
+      ],
     },
     data: {
       route: "/(workouts)/active-session",
@@ -133,15 +158,6 @@ export const registerWorkoutNotificationHandlers = () => {
     async () => new Promise<void>(() => {}),
   );
 
-  notifee.onBackgroundEvent(async ({ type, detail }) => {
-    if (
-      type === notifyKitModule?.EventType.PRESS &&
-      detail.notification?.id === NOTIFICATION_ID
-    ) {
-      router.navigate("/(workouts)/active-session");
-    }
-  });
-
   notifee.onForegroundEvent(({ type, detail }) => {
     if (
       type === notifyKitModule?.EventType.PRESS &&
@@ -149,6 +165,7 @@ export const registerWorkoutNotificationHandlers = () => {
     ) {
       router.navigate("/(workouts)/active-session");
     }
+    // Foreground action presses are handled by onForegroundActionPress in index.ts
   });
 };
 
@@ -156,7 +173,8 @@ export const startWorkoutNotification = async (
   sessionName: string,
   elapsedTime = 0,
   currentExerciseName?: string,
-  startTime?: number,
+  chronometerTimestamp?: number,
+  isPaused = false,
 ) => {
   const notifee = getNotifyKit();
   if (!notifee) {
@@ -171,7 +189,8 @@ export const startWorkoutNotification = async (
         sessionName,
         elapsedTime,
         currentExerciseName,
-        startTime,
+        chronometerTimestamp,
+        isPaused,
       }),
     );
   } catch (error) {
@@ -185,14 +204,16 @@ export const updateWorkoutNotification = async ({
   restTimeLeft,
   currentExerciseName,
   restComplete,
-  startTime,
+  chronometerTimestamp,
+  isPaused,
 }: {
   sessionName: string;
   elapsedTime: number;
   restTimeLeft?: number;
   currentExerciseName?: string;
   restComplete?: boolean;
-  startTime?: number;
+  chronometerTimestamp?: number;
+  isPaused?: boolean;
 }) => {
   const notifee = getNotifyKit();
   if (!notifee) {
@@ -208,7 +229,8 @@ export const updateWorkoutNotification = async ({
         restTimeLeft,
         currentExerciseName,
         restComplete,
-        startTime,
+        chronometerTimestamp,
+        isPaused,
       }),
     );
   } catch (error) {
@@ -228,3 +250,4 @@ export const stopWorkoutNotification = async () => {
     console.warn("[WorkoutNotification] Failed to stop notification.", error);
   }
 };
+

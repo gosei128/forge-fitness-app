@@ -23,6 +23,7 @@ import {
   Check,
   Dumbbell,
   Play,
+  Pause,
   X,
   ChevronDown,
   Coffee,
@@ -74,6 +75,9 @@ export default function ActiveSession() {
     setCustomRestDuration,
     stopRestTimer,
     updateExerciseUnit,
+    isPaused,
+    pauseSession,
+    resumeSession,
   } = useWorkoutSession();
 
   // Redirect back if no session is active
@@ -172,9 +176,35 @@ export default function ActiveSession() {
                 {formatTime(elapsedTime)}
               </Text>
               <Text className="text-neutral-500 font-spaceRegular text-xs ml-3">
-                Active Session
+                {isPaused ? "Paused" : "Active Session"}
               </Text>
             </View>
+
+            {/* Pause / Resume Button */}
+            <Pressable
+              onPress={isPaused ? resumeSession : pauseSession}
+              className={`flex-row items-center px-3 py-1.5 rounded-xl border ${
+                isPaused
+                  ? "bg-secondary/20 border-secondary"
+                  : "bg-neutral-800/80 border-neutral-700"
+              }`}
+            >
+              {isPaused ? (
+                <>
+                  <Play size={12} color="#f3ff47" fill="#f3ff47" />
+                  <Text className="text-secondary font-spaceBold text-xs ml-1.5">
+                    Resume
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Pause size={12} color="#fff" fill="#fff" />
+                  <Text className="text-white font-spaceBold text-xs ml-1.5">
+                    Pause
+                  </Text>
+                </>
+              )}
+            </Pressable>
           </View>
 
           {/* Rest Duration Setting Row */}

@@ -36,6 +36,14 @@ import {
   updateWorkoutNotification,
 } from "../lib/notificationService";
 import { queryClient } from "../lib/queryClient";
+import {
+  persistWorkout,
+  clearPersistedWorkout,
+  loadPersistedWorkout,
+  computeElapsedSeconds,
+  computeChronometerTimestamp,
+  PersistedWorkoutState,
+} from "../lib/workoutPersistence";
 
 export interface LoggedSet {
   id: number;
@@ -91,6 +99,9 @@ interface WorkoutSessionContextType {
   ) => void;
   removeSet: (exerciseId: number, setId: number) => void;
   updateExerciseUnit: (exerciseId: number, unit: string) => void;
+  isPaused: boolean;
+  pauseSession: () => void;
+  resumeSession: () => void;
   setCustomRestDuration: (seconds: number) => void;
   startRestTimer: () => void;
   stopRestTimer: () => void;
@@ -112,6 +123,9 @@ export const WorkoutSessionProvider: React.FC<{
     SelectedExercise[]
   >([]);
   const [startTime, setStartTime] = useState<Date | null>(null);
+  const [isPaused, setIsPaused] = useState(false);
+  const [pausedAt, setPausedAt] = useState<number | null>(null);
+  const [totalPausedMs, setTotalPausedMs] = useState(0);
 
   // Rest Timer States
   const [restTimeLeft, setRestTimeLeft] = useState(0);
@@ -122,16 +136,35 @@ export const WorkoutSessionProvider: React.FC<{
   const [isRestComplete, setIsRestComplete] = useState(false);
   const restCompleteHandledRef = useRef(false);
 
+  // Sync refs for notification updates to prevent interval rebuilds
+  const sessionNameRef = useRef(sessionName);
+  const currentExerciseNameRef = useRef(currentExerciseName);
+  const isRestActiveRef = useRef(isRestActive);
+  const isRestCompleteRef = useRef(isRestComplete);
+  const isPausedRef = useRef(isPaused);
+  const startTimeRef = useRef(startTime);
+  const totalPausedMsRef = useRef(totalPausedMs);
+  const pausedAtRef = useRef(pausedAt);
+
+  useEffect(() => { sessionNameRef.current = sessionName; }, [sessionName]);
+  useEffect(() => { currentExerciseNameRef.current = currentExerciseName; }, [currentExerciseName]);
+  useEffect(() => { isRestActiveRef.current = isRestActive; }, [isRestActive]);
+  useEffect(() => { isRestCompleteRef.current = isRestComplete; }, [isRestComplete]);
+  useEffect(() => { isPausedRef.current = isPaused; }, [isPaused]);
+  useEffect(() => { startTimeRef.current = startTime; }, [startTime]);
+  useEffect(() => { totalPausedMsRef.current = totalPausedMs; }, [totalPausedMs]);
+  useEffect(() => { pausedAtRef.current = pausedAt; }, [pausedAt]);
+
   const getElapsedSeconds = useCallback(() => {
     if (!startTime) {
       return 0;
     }
-
+    const effectiveNow = isPaused && pausedAt != null ? pausedAt : Date.now();
     return Math.max(
       0,
-      Math.floor((Date.now() - startTime.getTime()) / 1000),
+      Math.floor((effectiveNow - startTime.getTime() - totalPausedMs) / 1000),
     );
-  }, [startTime]);
+  }, [isPaused, pausedAt, startTime, totalPausedMs]);
 
   const getRestSecondsLeft = useCallback(() => {
     if (!restStartTime || restDuration <= 0) {
@@ -165,23 +198,24 @@ export const WorkoutSessionProvider: React.FC<{
   }, []);
 
   const syncTimers = useCallback(() => {
-    if (!isActive) {
-      setElapsedTime(0);
+    if (!isActive || isPausedRef.current) {
       return;
     }
 
     const nextElapsedTime = getElapsedSeconds();
     setElapsedTime(nextElapsedTime);
 
-    const startTimeMs = startTime?.getTime();
+    const startTimeMs = startTimeRef.current?.getTime() ?? Date.now();
+    const chronometerTimestamp = startTimeMs + totalPausedMsRef.current;
 
-    if (!isRestActive) {
+    if (!isRestActiveRef.current) {
       updateWorkoutNotification({
-        sessionName,
+        sessionName: sessionNameRef.current,
         elapsedTime: nextElapsedTime,
-        currentExerciseName,
-        restComplete: isRestComplete,
-        startTime: startTimeMs,
+        currentExerciseName: currentExerciseNameRef.current,
+        restComplete: isRestCompleteRef.current,
+        chronometerTimestamp,
+        isPaused: false,
       });
       return;
     }
@@ -201,28 +235,23 @@ export const WorkoutSessionProvider: React.FC<{
     }
 
     updateWorkoutNotification({
-      sessionName,
+      sessionName: sessionNameRef.current,
       elapsedTime: nextElapsedTime,
       restTimeLeft: nextRestTimeLeft,
-      currentExerciseName,
+      currentExerciseName: currentExerciseNameRef.current,
       restComplete: nextRestTimeLeft <= 0,
-      startTime: startTimeMs,
+      chronometerTimestamp,
+      isPaused: false,
     });
   }, [
-    currentExerciseName,
     getElapsedSeconds,
     getRestSecondsLeft,
     isActive,
-    isRestActive,
-    isRestComplete,
-    sessionName,
-    startTime,
     triggerRestCompleteFeedback,
   ]);
 
   useEffect(() => {
-    if (!isActive) {
-      setElapsedTime(0);
+    if (!isActive || isPaused) {
       return;
     }
 
@@ -232,11 +261,18 @@ export const WorkoutSessionProvider: React.FC<{
     return () => {
       clearInterval(interval);
     };
-  }, [isActive, syncTimers]);
+  }, [isActive, isPaused, syncTimers]);
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (nextState) => {
       if (nextState === "active") {
+        // Sync MMKV state on foreground in case actions were triggered via notification
+        const persisted = loadPersistedWorkout();
+        if (persisted) {
+          setIsPaused(persisted.isPaused);
+          setPausedAt(persisted.pausedAt);
+          setTotalPausedMs(persisted.totalPausedMs);
+        }
         syncTimers();
       }
     });
@@ -256,6 +292,9 @@ export const WorkoutSessionProvider: React.FC<{
     const startedAt = new Date();
     setStartTime(startedAt);
     setElapsedTime(0);
+    setIsPaused(false);
+    setPausedAt(null);
+    setTotalPausedMs(0);
     setIsCollapsed(false);
     setRestTimeLeft(0);
     setRestStartTime(null);
@@ -279,6 +318,20 @@ export const WorkoutSessionProvider: React.FC<{
     }
     setSessionNameState(nextSessionName);
 
+    // Persist workout state to MMKV
+    persistWorkout({
+      workoutName: nextSessionName,
+      workoutStartTimestamp: startedAt.getTime(),
+      pausedAt: null,
+      totalPausedMs: 0,
+      restStartTimestamp: null,
+      restDurationSeconds: 0,
+      currentExerciseName: "",
+      customRestDuration: defaultRestDuration ?? 60,
+      isActive: true,
+      isPaused: false,
+    });
+
     if (templateId) {
       try {
         const results = await db
@@ -295,7 +348,10 @@ export const WorkoutSessionProvider: React.FC<{
             orderNumber: templateExercises.orderNumber,
           })
           .from(templateExercises)
-          .innerJoin(dbExercises, eq(templateExercises.exerciseId, dbExercises.id))
+          .innerJoin(
+            dbExercises,
+            eq(templateExercises.exerciseId, dbExercises.id),
+          )
           .where(eq(templateExercises.templateId, templateId))
           .orderBy(templateExercises.orderNumber);
 
@@ -432,7 +488,10 @@ export const WorkoutSessionProvider: React.FC<{
             const lastSetRow = await db
               .select({ sessionId: sets.sessionId })
               .from(sets)
-              .innerJoin(workoutSessions, eq(sets.sessionId, workoutSessions.id))
+              .innerJoin(
+                workoutSessions,
+                eq(sets.sessionId, workoutSessions.id),
+              )
               .where(
                 and(
                   eq(sets.exerciseId, id),
@@ -518,7 +577,6 @@ export const WorkoutSessionProvider: React.FC<{
 
     await db.insert(user).values({
       firstName: "Forge",
-      lastName: "Athlete",
       email: "athlete@forge.com",
       remoteId: "default_user",
     });
@@ -601,7 +659,9 @@ export const WorkoutSessionProvider: React.FC<{
         // Play level-up sound
         if (createAudioPlayer) {
           try {
-            const player = createAudioPlayer(require("../assets/audio/notif.wav"));
+            const player = createAudioPlayer(
+              require("../assets/audio/notif.wav"),
+            );
             player.play();
           } catch (e) {
             console.warn("[WorkoutSession] Failed to play level-up sound:", e);
@@ -625,12 +685,16 @@ export const WorkoutSessionProvider: React.FC<{
             setSessionNameState("");
             setCurrentExerciseName("");
             setElapsedTime(0);
+            setIsPaused(false);
+            setPausedAt(null);
+            setTotalPausedMs(0);
             setIsCollapsed(false);
             setRestTimeLeft(0);
             setRestStartTime(null);
             setRestDuration(0);
             setIsRestActive(false);
             setIsRestComplete(false);
+            clearPersistedWorkout();
             stopWorkoutNotification();
             router.replace("/(tabs)/workouts");
           },
@@ -675,12 +739,16 @@ export const WorkoutSessionProvider: React.FC<{
             setSessionNameState("");
             setCurrentExerciseName("");
             setElapsedTime(0);
+            setIsPaused(false);
+            setPausedAt(null);
+            setTotalPausedMs(0);
             setIsCollapsed(false);
             setRestTimeLeft(0);
             setRestStartTime(null);
             setRestDuration(0);
             setIsRestActive(false);
             setIsRestComplete(false);
+            clearPersistedWorkout();
             stopWorkoutNotification();
             router.replace("/(tabs)/workouts");
           },
@@ -863,6 +931,67 @@ export const WorkoutSessionProvider: React.FC<{
     );
   };
 
+  const pauseSession = useCallback(() => {
+    if (!isActive || isPaused) return;
+    const now = Date.now();
+    setIsPaused(true);
+    setPausedAt(now);
+
+    const persisted = loadPersistedWorkout();
+    if (persisted) {
+      const updated: PersistedWorkoutState = {
+        ...persisted,
+        isPaused: true,
+        pausedAt: now,
+      };
+      persistWorkout(updated);
+      const elapsed = computeElapsedSeconds(updated);
+      setElapsedTime(elapsed);
+
+      const chronometerTimestamp = computeChronometerTimestamp(updated);
+      updateWorkoutNotification({
+        sessionName,
+        elapsedTime: elapsed,
+        currentExerciseName,
+        chronometerTimestamp,
+        isPaused: true,
+      });
+    }
+  }, [currentExerciseName, isActive, isPaused, sessionName]);
+
+  const resumeSession = useCallback(() => {
+    if (!isActive || !isPaused || pausedAt == null) return;
+    const now = Date.now();
+    const pausedMs = now - pausedAt;
+    const nextTotalPausedMs = totalPausedMs + pausedMs;
+
+    setIsPaused(false);
+    setPausedAt(null);
+    setTotalPausedMs(nextTotalPausedMs);
+
+    const persisted = loadPersistedWorkout();
+    if (persisted) {
+      const updated: PersistedWorkoutState = {
+        ...persisted,
+        isPaused: false,
+        pausedAt: null,
+        totalPausedMs: nextTotalPausedMs,
+      };
+      persistWorkout(updated);
+      const elapsed = computeElapsedSeconds(updated);
+      setElapsedTime(elapsed);
+
+      const chronometerTimestamp = computeChronometerTimestamp(updated);
+      updateWorkoutNotification({
+        sessionName,
+        elapsedTime: elapsed,
+        currentExerciseName,
+        chronometerTimestamp,
+        isPaused: false,
+      });
+    }
+  }, [currentExerciseName, isActive, isPaused, pausedAt, sessionName, totalPausedMs]);
+
   const startRestTimer = () => {
     if (customRestDuration > 0) {
       setRestStartTime(Date.now());
@@ -896,6 +1025,9 @@ export const WorkoutSessionProvider: React.FC<{
         customRestDuration,
         isRestActive,
         startTime,
+        isPaused,
+        pauseSession,
+        resumeSession,
         startSession,
         collapseSession,
         expandSession,
