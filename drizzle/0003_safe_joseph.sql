@@ -1,4 +1,4 @@
-CREATE TABLE `template_exercises` (
+CREATE TABLE IF NOT EXISTS `template_exercises` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`template_id` integer NOT NULL,
 	`exercise_id` integer NOT NULL,
@@ -7,7 +7,7 @@ CREATE TABLE `template_exercises` (
 	FOREIGN KEY (`exercise_id`) REFERENCES `exercises`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `workout_templates` (
+CREATE TABLE IF NOT EXISTS `workout_templates` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`name` text NOT NULL,

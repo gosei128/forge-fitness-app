@@ -44,6 +44,7 @@ export async function completeWorkoutSession(
         setNumber: sets.setNumber,
         isPr: sets.isPr,
         weightUnit: sets.weightUnit,
+        setType: sets.setType,
         createdAt: sets.createdAt,
         muscleGroup: exercises.muscleGroup,
       })
@@ -51,18 +52,22 @@ export async function completeWorkoutSession(
       .leftJoin(exercises, eq(exercises.id, sets.exerciseId))
       .where(eq(sets.sessionId, sessionId));
 
-    // 2. Run checkAndUpdatePR for every set in the session
+    // 2. Run checkAndUpdatePR for non-warmup sets in the session
     const isPRs: boolean[] = [];
     for (const set of sessionSets) {
-      const prResult = await checkAndUpdatePR(
-        userId,
-        set.exerciseId,
-        set.id,
-        set.weight,
-        set.reps,
-        set.weightUnit
-      );
-      isPRs.push(prResult.isPR);
+      if (set.setType === "warmup") {
+        isPRs.push(false);
+      } else {
+        const prResult = await checkAndUpdatePR(
+          userId,
+          set.exerciseId,
+          set.id,
+          set.weight,
+          set.reps,
+          set.weightUnit
+        );
+        isPRs.push(prResult.isPR);
+      }
     }
 
     // 3. Run calculateSessionXP on all sets (with updated PR flags)

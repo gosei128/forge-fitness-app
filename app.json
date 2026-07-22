@@ -33,7 +33,7 @@
       "expo-sqlite",
       "expo-router",
       "expo-status-bar",
-      "expo-av",
+      "expo-audio",
       [
         "react-native-notify-kit",
         {
@@ -46,7 +46,8 @@
           }
         }
       ],
-      "expo-splash-screen"
+      "expo-splash-screen",
+      "expo-asset"
     ],
     "extra": {
       "router": {},

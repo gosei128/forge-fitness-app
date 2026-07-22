@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from "react";
+import React from "react";
 import {
   Text,
   View,
@@ -6,19 +6,10 @@ import {
   Pressable,
   ActivityIndicator,
 } from "react-native";
-import { useFocusEffect, router } from "expo-router";
+import { router } from "expo-router";
 import Header from "../../components/Header";
 import Spacer from "../../components/Spacer";
 import { Trophy, Flame, Dumbbell } from "lucide-react-native";
-import { db } from "../../db";
-import {
-  user,
-  userStats,
-  workoutSessions,
-  personalRecords,
-  exercises,
-} from "../../db/schema";
-import { eq, desc } from "drizzle-orm";
 import Animated, { FadeInUp } from "react-native-reanimated";
 import { getAllArchetypes, getArchetype } from "../../lib/archetypes";
 interface PRItem {
@@ -54,103 +45,16 @@ function formatXP(xp: number): string {
   return xp.toString();
 }
 
+import { useProfileData } from "../../lib/hooks/useQueries";
+
 export default function Profile() {
-  const [loading, setLoading] = useState(true);
-  const [stats, setStats] = useState<{
-    currentLevel: number;
-    totalXp: number;
-    currentStreak: number;
-    longestStreak: number;
-    currentRank: string;
-    selectedArchetypeId?: string | null;
-    currentPhase?: number | null;
-  } | null>(null);
-  const [sessionsCount, setSessionsCount] = useState(0);
-  const [prList, setPrList] = useState<PRItem[]>([]);
-  const [userName, setUserName] = useState("Roni");
+  const { data, isLoading: loading } = useProfileData();
+
+  const userName = data?.userName ?? "Forge Athlete";
+  const stats = data?.stats;
+  const sessionsCount = data?.sessionsCount ?? 0;
+  const prList = data?.prList ?? [];
   const archetypes = getAllArchetypes();
-
-  useFocusEffect(
-    useCallback(() => {
-      let isMounted = true;
-      async function loadProfileData() {
-        try {
-          // Get user
-          const users = await db.select().from(user).limit(1);
-          if (users.length > 0) {
-            const currentUser = users[0];
-            if (isMounted) {
-              setUserName(currentUser.firstName);
-            }
-
-            const userId = currentUser.id;
-
-            // Fetch userStats
-            const statsRes = await db
-              .select()
-              .from(userStats)
-              .where(eq(userStats.userId, userId))
-              .limit(1);
-            if (statsRes.length > 0 && isMounted) {
-              setStats(statsRes[0]);
-            } else if (isMounted) {
-              setStats({
-                currentLevel: 1,
-                totalXp: 0,
-                currentStreak: 0,
-                longestStreak: 0,
-                currentRank: "Newbie",
-                selectedArchetypeId: null,
-                currentPhase: null,
-              });
-            }
-
-            // Fetch total sessions completed
-            const sessions = await db
-              .select()
-              .from(workoutSessions)
-              .where(eq(workoutSessions.userId, userId));
-            const completedSessions = sessions.filter((s) => s.completedAt);
-            if (isMounted) {
-              setSessionsCount(completedSessions.length);
-            }
-
-            // Fetch personal records list (joined with exercises)
-            const prs = await db
-              .select({
-                prId: personalRecords.id,
-                weight: personalRecords.weight,
-                reps: personalRecords.reps,
-                achievedAt: personalRecords.achievedAt,
-                exerciseName: exercises.name,
-              })
-              .from(personalRecords)
-              .innerJoin(
-                exercises,
-                eq(personalRecords.exerciseId, exercises.id),
-              )
-              .where(eq(personalRecords.userId, userId))
-              .orderBy(desc(personalRecords.achievedAt))
-              .limit(3);
-
-            if (isMounted) {
-              setPrList(prs);
-            }
-          }
-        } catch (e) {
-          console.error("Error loading profile details:", e);
-        } finally {
-          if (isMounted) {
-            setLoading(false);
-          }
-        }
-      }
-      loadProfileData();
-      return () => {
-        isMounted = false;
-      };
-    }, []),
-  );
 
   const level = stats?.currentLevel ?? 1;
   const streak = stats?.currentStreak ?? 0;

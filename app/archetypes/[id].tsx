@@ -130,7 +130,15 @@ function AccordionCard({
 // Isolated dayIndex state per phase — navigation is independent across phases.
 function WorkoutCarousel({ workouts }: { workouts: Workout[] }) {
   const [dayIndex, setDayIndex] = useState(0);
-  const workout = workouts[dayIndex];
+
+  // Reset index when workouts list changes (e.g. user toggles a different phase)
+  useEffect(() => {
+    setDayIndex(0);
+  }, [workouts]);
+
+  // Guard dayIndex out of bounds during transition renders
+  const safeDayIndex = dayIndex >= workouts.length ? 0 : dayIndex;
+  const workout = workouts[safeDayIndex];
 
   // Guard against empty workouts array
   if (!workout) return null;
@@ -166,14 +174,14 @@ function WorkoutCarousel({ workouts }: { workouts: Workout[] }) {
   };
 
   const goBack = () => {
-    if (dayIndex > 0) navigate("prev");
+    if (safeDayIndex > 0) navigate("prev");
   };
   const goNext = () => {
-    if (dayIndex < workouts.length - 1) navigate("next");
+    if (safeDayIndex < workouts.length - 1) navigate("next");
   };
 
-  const isFirst = dayIndex === 0;
-  const isLast = dayIndex === workouts.length - 1;
+  const isFirst = safeDayIndex === 0;
+  const isLast = safeDayIndex === workouts.length - 1;
 
   return (
     <View className="mt-4 border-t border-white/5 pt-4">
@@ -201,10 +209,10 @@ function WorkoutCarousel({ workouts }: { workouts: Workout[] }) {
               <View
                 key={i}
                 style={{
-                  width: i === dayIndex ? 14 : 5,
+                  width: i === safeDayIndex ? 14 : 5,
                   height: 5,
                   borderRadius: 3,
-                  backgroundColor: i === dayIndex ? "#fba613" : "#333",
+                  backgroundColor: i === safeDayIndex ? "#fba613" : "#333",
                 }}
               />
             ))}

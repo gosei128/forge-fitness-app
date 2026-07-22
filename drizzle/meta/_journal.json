@@ -71,6 +71,13 @@
       "when": 1783457549119,
       "tag": "0009_archetype_selection",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1784659118369,
+      "tag": "0010_freezing_leech",
+      "breakpoints": true
     }
   ]
 }

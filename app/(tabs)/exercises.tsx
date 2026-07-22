@@ -18,11 +18,10 @@ import React, {
 } from "react";
 import Spacer from "../../components/Spacer";
 import Header from "../../components/Header";
-import { db } from "../../db";
-import { exercises } from "../../db/schema";
 import { useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { SlidersHorizontal, X, Check, Search } from "lucide-react-native";
+import { useExercises } from "../../lib/hooks/useQueries";
 
 type Exercise = {
   id: number;
@@ -209,20 +208,10 @@ const ExerciseCard = React.memo(
 // ─── Screen ─────────────────────────────────────────────────────────────────
 const Exercises = () => {
   const router = useRouter();
-  const [allExercises, setAllExercises] = useState<Exercise[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data: allExercises = [], isLoading } = useExercises();
   const [activeFilter, setActiveFilter] = useState<string | null>(null);
   const [sheetOpen, setSheetOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
-  useEffect(() => {
-    const fetchExercises = async () => {
-      const data = await db.select().from(exercises);
-      setAllExercises(data);
-      setIsLoading(false);
-    };
-    fetchExercises();
-  }, []);
 
   const muscleGroups = useMemo(
     () => Array.from(new Set(allExercises.map((e) => e.muscleGroup))).sort(),

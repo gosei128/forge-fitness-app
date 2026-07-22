@@ -8,14 +8,16 @@ import React, {
 } from "react";
 import { Alert, AppState, Vibration } from "react-native";
 import { router } from "expo-router";
-// Dynamically import Audio from expo-av to prevent crashes on start if the native module is not compiled/built
-let Audio: any = null;
+// Dynamically import from expo-audio to prevent crashes on start if native module is not compiled/built
+let createAudioPlayer: any = null;
+let setAudioModeAsync: any = null;
 try {
-  const expoAV = require("expo-av");
-  Audio = expoAV.Audio;
+  const expoAudio = require("expo-audio");
+  createAudioPlayer = expoAudio.createAudioPlayer;
+  setAudioModeAsync = expoAudio.setAudioModeAsync;
 } catch (e) {
   console.log(
-    "[WorkoutSession] expo-av native module not available. Rest timer sound will be disabled.",
+    "[WorkoutSession] expo-audio native module not available. Sound effects will be disabled.",
   );
 }
 import { db } from "../db";
@@ -33,12 +35,15 @@ import {
   stopWorkoutNotification,
   updateWorkoutNotification,
 } from "../lib/notificationService";
+import { queryClient } from "../lib/queryClient";
 
 export interface LoggedSet {
   id: number;
   weight: string;
   reps: string;
   isCompleted: boolean;
+  setType?: "working" | "warmup" | "drop" | "failure";
+  rir?: number;
 }
 
 export interface SelectedExercise {
@@ -143,26 +148,16 @@ export const WorkoutSessionProvider: React.FC<{
     // Vibrate device
     Vibration.vibrate([0, 500, 200, 500]);
 
-    // Play sound beep if Audio is available
-    if (Audio) {
+    // Play sound beep if audio player is available
+    if (createAudioPlayer) {
       try {
-        await Audio.setAudioModeAsync({
-          playsInSilentModeIOS: true,
-          allowsRecordingIOS: false,
-          staysActiveInBackground: true,
-          playThroughEarpieceAndroid: false,
-        });
-
-        const { sound } = await Audio.Sound.createAsync(
-          require("../assets/audio/notif.wav"),
-        );
-        await sound.playAsync();
-
-        sound.setOnPlaybackStatusUpdate((status: any) => {
-          if (status.isLoaded && status.didJustFinish) {
-            sound.unloadAsync();
-          }
-        });
+        if (setAudioModeAsync) {
+          await setAudioModeAsync({
+            playsInSilentMode: true,
+          });
+        }
+        const player = createAudioPlayer(require("../assets/audio/notif.wav"));
+        player.play();
       } catch (e) {
         console.error("Could not play sound: ", e);
       }
@@ -580,6 +575,8 @@ export const WorkoutSessionProvider: React.FC<{
           setNumber: index + 1,
           isPr: false,
           weightUnit: ex.weightUnit || "lbs",
+          setType: s.setType || "working",
+          rir: s.rir !== undefined ? s.rir : null,
           createdAt: new Date(),
         }));
 
@@ -602,23 +599,22 @@ export const WorkoutSessionProvider: React.FC<{
       if (completionResult.leveledUp) {
         message += `\n\n🎉 LEVEL UP! You reached Level ${completionResult.newLevel}! 🎉`;
         // Play level-up sound
-        if (Audio) {
+        if (createAudioPlayer) {
           try {
-            const { sound: levelUpSound } = await Audio.Sound.createAsync(
-              require("../assets/audio/notif.wav"),
-            );
-            await levelUpSound.playAsync();
-            // Unload after playback finishes to free memory
-            levelUpSound.setOnPlaybackStatusUpdate((status: any) => {
-              if (status.didJustFinish) {
-                levelUpSound.unloadAsync();
-              }
-            });
+            const player = createAudioPlayer(require("../assets/audio/notif.wav"));
+            player.play();
           } catch (e) {
             console.warn("[WorkoutSession] Failed to play level-up sound:", e);
           }
         }
       }
+
+      // Invalidate cached data across all screens
+      queryClient.invalidateQueries({ queryKey: ["userStats"] });
+      queryClient.invalidateQueries({ queryKey: ["workoutHistory"] });
+      queryClient.invalidateQueries({ queryKey: ["profileData"] });
+      queryClient.invalidateQueries({ queryKey: ["missions"] });
+      queryClient.invalidateQueries({ queryKey: ["exerciseDetail"] });
 
       Alert.alert("Workout Saved", message, [
         {

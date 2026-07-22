@@ -1,4 +1,4 @@
-CREATE TABLE `personal_records` (
+CREATE TABLE IF NOT EXISTS `personal_records` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`exercise_id` integer NOT NULL,
@@ -12,7 +12,7 @@ CREATE TABLE `personal_records` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `user_exercise_pr_idx` ON `personal_records` (`user_id`,`exercise_id`);--> statement-breakpoint
-CREATE TABLE `sets` (
+CREATE TABLE IF NOT EXISTS `sets` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`session_id` integer NOT NULL,
 	`exercise_id` integer NOT NULL,
@@ -25,7 +25,7 @@ CREATE TABLE `sets` (
 	FOREIGN KEY (`exercise_id`) REFERENCES `exercises`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `user` (
+CREATE TABLE IF NOT EXISTS `user` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`first_name` text NOT NULL,
 	`last_name` text NOT NULL,
@@ -36,7 +36,7 @@ CREATE TABLE `user` (
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX `user_email_idx` ON `user` (`email`);--> statement-breakpoint
-CREATE TABLE `user_stats` (
+CREATE TABLE IF NOT EXISTS `user_stats` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL,
 	`total_xp` integer DEFAULT 0 NOT NULL,
@@ -47,7 +47,7 @@ CREATE TABLE `user_stats` (
 	FOREIGN KEY (`user_id`) REFERENCES `user`(`id`) ON UPDATE no action ON DELETE no action
 );
 --> statement-breakpoint
-CREATE TABLE `workout_sessions` (
+CREATE TABLE IF NOT EXISTS `workout_sessions` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`name` text,
 	`user_id` integer NOT NULL,

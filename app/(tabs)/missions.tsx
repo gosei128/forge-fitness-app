@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Text,
   View,
@@ -7,18 +7,10 @@ import {
   ActivityIndicator,
   Pressable,
 } from "react-native";
-import { useFocusEffect } from "expo-router";
 import Header from "../../components/Header";
 import Spacer from "../../components/Spacer";
 import { Sword, CheckCircle, Clock, Trophy, Target } from "lucide-react-native";
-import { db } from "../../db";
-import { user, userStats } from "../../db/schema";
-import { eq } from "drizzle-orm";
-import {
-  getMissions,
-  Mission,
-  generateMissions,
-} from "../../lib/missionEngine";
+import { Mission } from "../../lib/missionEngine";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -52,15 +44,12 @@ function MissionProgressBar({ progress }: { progress: number }) {
   );
 }
 
+import { useMissions } from "../../lib/hooks/useQueries";
+
 export default function MissionsScreen() {
-  const [missionsList, setMissionsList] = useState<Mission[]>([]);
-  const [stats, setStats] = useState<{
-    currentLevel: number;
-    totalXp: number;
-    currentRank: string;
-  } | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
+  const { data, isLoading: loading, refetch, isRefetching: refreshing } = useMissions();
+  const missionsList = data?.missions ?? [];
+  const stats = data?.stats ?? null;
   const [daysLeft, setDaysLeft] = useState(7);
 
   // Calculate days left until next Monday reset
@@ -71,44 +60,8 @@ export default function MissionsScreen() {
     setDaysLeft(days);
   }, []);
 
-  const loadData = useCallback(async () => {
-    try {
-      const users = await db.select().from(user).limit(1);
-      if (users.length > 0) {
-        const userId = users[0].id;
-
-        // Ensure missions exist for this user first
-        await generateMissions(userId);
-
-        const activeMissions = await getMissions(userId);
-        setMissionsList(activeMissions);
-
-        const statRows = await db
-          .select()
-          .from(userStats)
-          .where(eq(userStats.userId, userId))
-          .limit(1);
-        if (statRows.length > 0) {
-          setStats(statRows[0]);
-        }
-      }
-    } catch (error) {
-      console.error("Error loading missions screen data:", error);
-    } finally {
-      setLoading(false);
-      setRefreshing(false);
-    }
-  }, []);
-
-  useFocusEffect(
-    useCallback(() => {
-      loadData();
-    }, [loadData]),
-  );
-
   const onRefresh = () => {
-    setRefreshing(true);
-    loadData();
+    refetch();
   };
 
   const completedCount = missionsList.filter(

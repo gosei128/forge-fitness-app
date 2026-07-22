@@ -38,6 +38,7 @@ import {
   workoutTemplates,
 } from "../../../db/schema";
 import Spacer from "../../../components/Spacer";
+import { queryClient } from "../../../lib/queryClient";
 
 interface ExerciseOption {
   id: number;
@@ -294,6 +295,7 @@ export default function EditTemplate() {
         });
       }
 
+      queryClient.invalidateQueries({ queryKey: ["workoutTemplates"] });
       Alert.alert("Saved", "Your template has been updated.");
       router.back();
     } catch (error) {
@@ -314,7 +316,7 @@ export default function EditTemplate() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === "ios" ? "padding" : "height"}
       className="flex-1 bg-primary"
       keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 0}
     >
@@ -441,9 +443,6 @@ export default function EditTemplate() {
                 {exercise.sets.map((set, index) => (
                   <Animated.View
                     key={set.id}
-                    entering={FadeIn.duration(140)}
-                    exiting={FadeOut.duration(120)}
-                    layout={Layout.springify()}
                     className="flex-row items-center mb-2 px-1"
                   >
                     <View className="w-[40px] items-center">

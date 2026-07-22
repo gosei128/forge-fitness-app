@@ -55,6 +55,8 @@ export const sets = sqliteTable("sets", {
   setNumber: int("set_number").notNull(),
   isPr: int("is_pr", { mode: "boolean" }).default(false),
   weightUnit: text("weight_unit").notNull().default("lbs"),
+  setType: text("set_type").notNull().default("working"),
+  rir: int("rir"),
   createdAt: int("created_at", { mode: "timestamp" }).$defaultFn(
     () => new Date(),
   ),

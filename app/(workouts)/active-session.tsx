@@ -48,7 +48,10 @@ export default function ActiveSession() {
   const navigation = useNavigation();
 
   const [isModalVisible, setIsModalVisible] = useState(false);
-  const [unitDropdown, setUnitDropdown] = useState<{ exerciseId: number; currentUnit: string } | null>(null);
+  const [unitDropdown, setUnitDropdown] = useState<{
+    exerciseId: number;
+    currentUnit: string;
+  } | null>(null);
 
   const {
     isActive,
@@ -83,7 +86,6 @@ export default function ActiveSession() {
   const handleEditUnit = (exerciseId: number, currentUnit: string) => {
     setUnitDropdown({ exerciseId, currentUnit });
   };
-
 
   // Block exiting the screen during an active workout session
   useEffect(() => {
@@ -211,7 +213,7 @@ export default function ActiveSession() {
           {isRestActive && restTimeLeft > 0 && (
             <View className="mt-4 bg-amber-500/10 border border-amber-500/25 rounded-xl p-3 flex-row justify-between items-center">
               <View className="flex-row items-center">
-                <Coffee size={16} color="#f59e0b" className="mr-2" />
+                <Coffee size={16} color="#CAFE20" className="mr-2" />
                 <View>
                   <Text className="text-white font-spaceBold text-sm leading-tight">
                     Resting...
@@ -305,12 +307,53 @@ export default function ActiveSession() {
               {/* Set Rows */}
               {exercise.sets.map((set, index) => (
                 <View key={set.id} className="flex-row items-center mb-2 px-1">
-                  {/* Set number */}
-                  <View className="w-[40px] items-center">
-                    <Text className="text-white font-spaceMedium text-sm">
-                      {index + 1}
+                  {/* Set number / Type toggle */}
+                  <Pressable
+                    onPress={() => {
+                      const nextTypeMap: Record<
+                        string,
+                        "working" | "warmup" | "drop" | "failure"
+                      > = {
+                        working: "warmup",
+                        warmup: "drop",
+                        drop: "failure",
+                        failure: "working",
+                      };
+                      const currentType = set.setType || "working";
+                      updateSet(exercise.id, set.id, {
+                        setType: nextTypeMap[currentType],
+                      });
+                    }}
+                    className={`w-[42px] h-[28px] items-center justify-center rounded-lg border ${
+                      set.setType === "warmup"
+                        ? "bg-amber-500/20 border-amber-500/40"
+                        : set.setType === "drop"
+                          ? "bg-purple-500/20 border-purple-500/40"
+                          : set.setType === "failure"
+                            ? "bg-red-500/20 border-red-500/40"
+                            : "bg-primary border-neutral-900"
+                    }`}
+                  >
+                    <Text
+                      className={`font-spaceBold text-[10px] ${
+                        set.setType === "warmup"
+                          ? "text-amber-400"
+                          : set.setType === "drop"
+                            ? "text-purple-400"
+                            : set.setType === "failure"
+                              ? "text-red-400"
+                              : "text-white"
+                      }`}
+                    >
+                      {set.setType === "warmup"
+                        ? "WM"
+                        : set.setType === "drop"
+                          ? "DROP"
+                          : set.setType === "failure"
+                            ? "FAIL"
+                            : `${index + 1}`}
                     </Text>
-                  </View>
+                  </Pressable>
 
                   {/* Weight input */}
                   <TextInput

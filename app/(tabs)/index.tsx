@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Text,
   View,
@@ -7,7 +7,7 @@ import {
   Pressable,
   StatusBar,
 } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import Header from "../../components/Header";
 import Spacer from "../../components/Spacer";
 import AnimatedProgressBar from "../../components/AnimatedProgressBar";
@@ -16,12 +16,8 @@ import {
   Trophy,
   Dumbbell,
   Sword,
-  Space,
   Check,
 } from "lucide-react-native";
-import { db } from "../../db";
-import { user, userStats } from "../../db/schema";
-import { eq } from "drizzle-orm";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -31,8 +27,7 @@ import Animated, {
   withSpring,
   runOnJS,
 } from "react-native-reanimated";
-import { getMissions, Mission } from "../../lib/missionEngine";
-import { getCoachLine } from "../../lib/coachEngine";
+import { Mission } from "../../lib/missionEngine";
 
 /**
  * Animated Flame Icon with subtle pulsing
@@ -116,72 +111,16 @@ function AnimatedLevelNumber({ level }: { level: number }) {
   );
 }
 
+import { useUserStats } from "../../lib/hooks/useQueries";
+
 export default function Index() {
-  const [stats, setStats] = useState<{
-    currentLevel: number;
-    totalXp: number;
-    currentStreak: number;
-    longestStreak: number;
-    currentRank: string;
-  } | null>(null);
+  const { data, isLoading } = useUserStats();
 
-  const [missionList, setMissionList] = useState<Mission[]>([]);
-  const [coachLine, setCoachLine] = useState<string>(
-    "Motivation gets you started, but discipline keeps you going. 💪",
-  );
-
-  // Fetch the actual stats when page is focused
-  useFocusEffect(
-    useCallback(() => {
-      let isMounted = true;
-      async function loadStats() {
-        try {
-          // Find first user
-          const users = await db.select().from(user).limit(1);
-
-          if (users.length > 0) {
-            const userId = users[0].id;
-            const res = await db
-              .select()
-              .from(userStats)
-              .where(eq(userStats.userId, userId))
-              .limit(1);
-            const activeMissions = await getMissions(userId);
-            setMissionList(activeMissions);
-            const coachData = await getCoachLine(userId);
-            if (isMounted) {
-              setCoachLine(coachData.line);
-            }
-            if (res.length > 0 && isMounted) {
-              setStats(res[0]);
-            } else if (isMounted) {
-              setStats({
-                currentLevel: 1,
-                totalXp: 0,
-                currentStreak: 0,
-                longestStreak: 0,
-                currentRank: "Newbie",
-              });
-            }
-          } else if (isMounted) {
-            setStats({
-              currentLevel: 1,
-              totalXp: 0,
-              currentStreak: 0,
-              longestStreak: 0,
-              currentRank: "Newbie",
-            });
-          }
-        } catch (e) {
-          console.error("Error loading stats on home screen:", e);
-        }
-      }
-      loadStats();
-      return () => {
-        isMounted = false;
-      };
-    }, []),
-  );
+  const stats = data?.stats;
+  const missionList = data?.missions ?? [];
+  const coachLine =
+    data?.coachLine ??
+    "Motivation gets you started, but discipline keeps you going. 💪";
 
   const level = stats?.currentLevel ?? 1;
   const totalXp = stats?.totalXp ?? 0;

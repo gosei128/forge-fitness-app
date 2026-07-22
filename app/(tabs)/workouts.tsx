@@ -13,23 +13,20 @@ import React, { useState, useEffect, useCallback } from "react";
 import Header from "../../components/Header";
 import Spacer from "../../components/Spacer";
 import {
-  PlusIcon,
   Trash2,
   Dumbbell,
   Sparkles,
   Clock,
   Calendar,
-  ChevronRight,
   MoreVertical,
   Plus,
 } from "lucide-react-native";
-import { router, useFocusEffect } from "expo-router";
+import { router } from "expo-router";
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
   FadeInUp,
-  FadeOut,
 } from "react-native-reanimated";
 import { db } from "../../db";
 import {
@@ -37,14 +34,14 @@ import {
   user,
   workoutTemplates,
   templateExercises,
-  workoutSessions,
-  sets,
 } from "../../db/schema";
 import { eq, desc, inArray } from "drizzle-orm";
 import ExerciseBottomSheet from "../../components/ExerciseBottomSheet";
 import AnimatedButton from "../../components/AnimatedButton";
 import UnitDropdownMenu from "../../components/UnitDropdownMenu";
 import { useWorkoutSession } from "../../context/WorkoutSessionContext";
+import { useWorkoutTemplates, useWorkoutHistory } from "../../lib/hooks/useQueries";
+import { queryClient } from "../../lib/queryClient";
 
 interface Exercise {
   id: number;
@@ -80,10 +77,10 @@ const Workouts = () => {
   const [tabContainerWidth, setTabContainerWidth] = useState(0);
   const activeTabOffset = useSharedValue(0);
 
-  // Dynamic Lists State
-  const [loading, setLoading] = useState(true);
-  const [customTemplates, setCustomTemplates] = useState<any[]>([]);
-  const [workoutHistory, setWorkoutHistory] = useState<any[]>([]);
+  // Dynamic Lists via React Query (cached, instant)
+  const { data: customTemplates = [], isLoading: templatesLoading, refetch: refetchTemplates } = useWorkoutTemplates();
+  const { data: workoutHistory = [], isLoading: historyLoading } = useWorkoutHistory();
+  const loading = templatesLoading || historyLoading;
 
   // Custom Workout Builder State
   const [customTitle, setCustomTitle] = useState("");
@@ -156,102 +153,7 @@ const Workouts = () => {
     router.push("/(workouts)/active-session");
   };
 
-  // Load custom templates and workout history from DB
-  const loadTemplatesAndHistory = async () => {
-    try {
-      const users = await db.select().from(user).limit(1);
-      if (users.length === 0) return;
-      const userIdVal = users[0].id;
-
-      // 1. Fetch custom templates
-      const temps = await db
-        .select()
-        .from(workoutTemplates)
-        .where(eq(workoutTemplates.userId, userIdVal));
-
-      const templatesList = [];
-      for (const temp of temps) {
-        const tempExs = await db
-          .select({
-            name: exercises.name,
-            weightUnit: templateExercises.weightUnit,
-          })
-          .from(templateExercises)
-          .innerJoin(exercises, eq(templateExercises.exerciseId, exercises.id))
-          .where(eq(templateExercises.templateId, temp.id))
-          .orderBy(templateExercises.orderNumber);
-
-        templatesList.push({
-          id: `custom_${temp.id}`,
-          dbId: temp.id,
-          name: temp.name,
-          exercises: tempExs.map((e) => e.name),
-          exerciseUnits: tempExs.map((e) => e.weightUnit),
-          restTime: temp.restTime,
-          description: `Custom Template · ${temp.restTime}s rest`,
-          isCustom: true,
-        });
-      }
-      setCustomTemplates(templatesList);
-
-      // 2. Fetch completed workout history
-      const historySessions = await db
-        .select()
-        .from(workoutSessions)
-        .where(eq(workoutSessions.userId, userIdVal))
-        .orderBy(desc(workoutSessions.completedAt));
-
-      const sessionsWithSets = [];
-      for (const sess of historySessions) {
-        if (!sess.completedAt) continue;
-
-        const sessionSets = await db
-          .select({
-            id: sets.id,
-            weight: sets.weight,
-            reps: sets.reps,
-            setNumber: sets.setNumber,
-            weightUnit: sets.weightUnit,
-            exerciseName: exercises.name,
-          })
-          .from(sets)
-          .innerJoin(exercises, eq(sets.exerciseId, exercises.id))
-          .where(eq(sets.sessionId, sess.id))
-          .orderBy(sets.setNumber);
-
-        // Group sets by exercise
-        const groupedExercises: { [key: string]: typeof sessionSets } = {};
-        for (const setRow of sessionSets) {
-          if (!groupedExercises[setRow.exerciseName]) {
-            groupedExercises[setRow.exerciseName] = [];
-          }
-          groupedExercises[setRow.exerciseName].push(setRow);
-        }
-
-        sessionsWithSets.push({
-          ...sess,
-          exercises: Object.entries(groupedExercises).map(
-            ([name, setsList]) => ({
-              name,
-              sets: setsList,
-            }),
-          ),
-        });
-      }
-      setWorkoutHistory(sessionsWithSets);
-    } catch (e) {
-      console.error("Error loading templates/history:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useFocusEffect(
-    useCallback(() => {
-      setLoading(true);
-      loadTemplatesAndHistory();
-    }, []),
-  );
+  // No manual focus-effect needed — React Query handles background refreshes
 
   const handleStartTemplate = async (
     templateName: string,
@@ -390,7 +292,7 @@ const Workouts = () => {
       setCustomExercises([]);
       setCustomRest(60);
       setActiveTab("templates");
-      loadTemplatesAndHistory();
+      queryClient.invalidateQueries({ queryKey: ["workoutTemplates"] });
     } catch (e) {
       console.error("Error saving template:", e);
       Alert.alert("Error", "Could not save template.");
@@ -414,7 +316,7 @@ const Workouts = () => {
               await db
                 .delete(workoutTemplates)
                 .where(eq(workoutTemplates.id, templateId));
-              loadTemplatesAndHistory();
+              queryClient.invalidateQueries({ queryKey: ["workoutTemplates"] });
             } catch (err) {
               console.error("Error deleting template:", err);
             }

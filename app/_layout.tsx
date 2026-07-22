@@ -25,21 +25,21 @@ import { generateMissions } from "../lib/missionEngine";
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
 
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "../lib/queryClient";
 import { WorkoutSessionProvider } from "../context/WorkoutSessionContext";
 import ActiveWorkoutFloatingBar from "../components/ActiveWorkoutFloatingBar";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 
+import { runSafeMigrations } from "../db/safeMigrator";
+
 const RootLayout = () => {
-  const { success: migrationsSuccess, error: migrationsError } = useMigrations(
-    db,
-    migration,
-  );
+  const [migrationsSuccess, setMigrationsSuccess] = useState(false);
 
   useEffect(() => {
-    if (migrationsError) {
-      console.error("Drizzle Migration Error:", migrationsError);
-    }
-  }, [migrationsError]);
+    const success = runSafeMigrations();
+    setMigrationsSuccess(success);
+  }, []);
 
   const [hasUser, setHasUser] = useState<boolean | null>(null);
 
@@ -85,20 +85,12 @@ const RootLayout = () => {
   }, [migrationsSuccess]);
 
   useEffect(() => {
-    if (
-      (fontsLoaded || fontsError) &&
-      (migrationsSuccess || migrationsError) &&
-      hasUser !== null
-    ) {
+    if ((fontsLoaded || fontsError) && migrationsSuccess && hasUser !== null) {
       SplashScreen.hideAsync();
     }
-  }, [fontsLoaded, fontsError, migrationsSuccess, migrationsError, hasUser]);
+  }, [fontsLoaded, fontsError, migrationsSuccess, hasUser]);
 
-  if (
-    (!fontsLoaded && !fontsError) ||
-    (!migrationsSuccess && !migrationsError) ||
-    hasUser === null
-  ) {
+  if ((!fontsLoaded && !fontsError) || !migrationsSuccess || hasUser === null) {
     return null;
   }
 
@@ -150,9 +142,11 @@ const RootLayout = () => {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      {content}
-    </GestureHandlerRootView>
+    <QueryClientProvider client={queryClient}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        {content}
+      </GestureHandlerRootView>
+    </QueryClientProvider>
   );
 };
 export default RootLayout;

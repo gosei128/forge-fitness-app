@@ -1,4 +1,4 @@
-CREATE TABLE `missions` (
+CREATE TABLE IF NOT EXISTS `missions` (
 	`id` integer PRIMARY KEY AUTOINCREMENT NOT NULL,
 	`user_id` integer NOT NULL REFERENCES `user`(`id`),
 	`type` text NOT NULL,
